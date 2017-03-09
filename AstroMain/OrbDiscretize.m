@@ -1,9 +1,10 @@
 function [Z0,x_plot] = OrbDiscretize(X,T,mult)
 % function [Z0,x_plot] = OrbDiscretize(X,T,mult)
 %
-% This function discretizes a trajectory into patch points and assembles a 
-% vector of design variables, including the total trajectory time, that can 
-% be passed as an initial guess to a multiple shooting method. 
+% This function discretizes a propagated trajectory into patch points and 
+% assembles a vector of design variables, including the total trajectory 
+% time, that can be passed as an initial guess to a multiple shooting 
+% method. 
 %
 % INPUTS:
 %    X        vector of initial state values,(6x1)
