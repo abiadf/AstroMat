@@ -75,7 +75,7 @@ for jj = 1:2:for_end
     tspan = [0 sum(t_seg(jj:jj+1,1))];
     
     % Integrate
-    [~,Xend] = ode113(@(t,in)EOM_CR3BP_LTCSI_NOCOS(t,in,cntrl,ce,mu),tspan,x_bnd0,options);
+    [~,Xend] = ode113(@(t,in)EOM_CR3BP_LTCSI(t,in,cntrl,ce,mu),tspan,x_bnd0,options);
     Xend_odd(:,:,ind) = Xend(end,:).';
     
 end

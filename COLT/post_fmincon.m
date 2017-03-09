@@ -3,7 +3,8 @@ function [x_bnd,tau_nodes,C,newti,colt] = post_fmincon(Z,t_bnd,output,newti,colt
 % 
 % This script uses fmincon output to calculate variables needed for the
 % collocation and mesh refinement process. It is intended to be run
-% immediately following fmincon in the script Coll_deBoor_fmincon
+% immediately following fmincon whether fmincon is used individually or in 
+% a mesh refinement process. 
 %
 % INPUTS:
 %    Z          design variable vector (n_coast+(n_state+n_cntrl+n_slack)*n_seg*(N+1)/2 x 1)

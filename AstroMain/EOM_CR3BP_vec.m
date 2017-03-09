@@ -6,7 +6,7 @@ function [xis_dot] = EOM_CR3BP_vec(xis,mu)
 % 2D or 3D matrix of state variables. 
 %
 % INPUTS:
-%    xis      2D or 3D array of state values, each row must correspond to 
+%    xis      2D or 3D matrix of state values, each row must correspond to 
 %             a different state, i.e. row 1 = x 
 %    mu       CR3BP mass ratio      
 %

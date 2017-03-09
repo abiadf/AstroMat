@@ -60,7 +60,7 @@ for ii = 1:n_seg
     tspan = [0 t_seg(ii)];
     
     % Integrate
-    [~,Xend_i] = ode113(@(t,in)EOM_CR3BP_LTCSI_NOCOS(t,in,cntrl,ce,mu),tspan,x_bnd0,options);
+    [~,Xend_i] = ode113(@(t,in)EOM_CR3BP_LTCSI(t,in,cntrl,ce,mu),tspan,x_bnd0,options);
     Xend(:,:,ind) = Xend_i(end,:).';
     
 end
