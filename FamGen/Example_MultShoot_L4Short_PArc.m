@@ -179,8 +179,7 @@ for ii = 1:n_step
     % Check sign and dimension of null space
     null_chk.Zpls = Zpls;
     null_chk.ps_ind = ii;
-%     [delt_Z_prev,null_chk] = NullCheck(delt_Z_prev,delt_Z_prev_old,null_chk);
-    [delt_Z_prev,null_chk] = NullCheck_New(delt_Z_prev,delt_Z_prev_old,null_chk);
+    [delt_Z_prev,null_chk] = NullCheck(delt_Z_prev,delt_Z_prev_old,null_chk);
         
     % Label Z from converged solution as Zprev, since new Z will be Zpls
     Z_prev = Z;

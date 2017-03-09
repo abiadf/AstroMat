@@ -1,7 +1,7 @@
-% Example_Lyapunov_EM.m
+% Example_SingleShoot_DRO_PArc.m
 %
-% This script uses collocation and direct optimization to compute a
-% Lyapunov orbit 
+% This script uses single shooting and pseudo-arclength continuation to
+% compute the family of DRO orbits in the Earth-Moon system.
 %
 % Originally Written by: R. Pritchett, 02/03/2017
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -133,7 +133,7 @@ plot3(x_init(:,1).*l_ch,x_init(:,2).*l_ch,x_init(:,3).*l_ch,'.r');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Run single shooting algorithm
-[X,T_half,DF_fin,sshoot] = PeriodicTarget(X0,T0_half,sshoot);
+[X,T_half,DF_fin,sshoot] = SingShoot(X0,T0_half,sshoot);
 
 % Save or load single shooting results
 % save('SSLyap','X','T_half')
@@ -168,7 +168,7 @@ sshoot.delt_s = delt_s;
 sshoot.ContCase = 'PArc'; % target orbit for use in pseudo-arclength arclength continuation scheme
 
 % Define number of pseudo-arclength continuation steps to take
-n_step = 400;
+n_step = 200;
 
 % Preallocate cell arrays for storing results
 X_store = cell(1,n_step);
@@ -191,7 +191,7 @@ for ii = 1:n_step
     % Run single shooting algorithm
     X0_pls = [Zpls(1) X0(2:4) Zpls(2) X0(6)];
     T0_half_pls = Zpls(3);
-    [X,T_half,DF_fin,sshoot] = PeriodicTarget(X0_pls,T0_half_pls,sshoot);
+    [X,T_half,DF_fin,sshoot] = SingShoot(X0_pls,T0_half_pls,sshoot);
 
     % Save or load single shooting results
     % save('SSLyap','X','T_half')
@@ -207,8 +207,7 @@ for ii = 1:n_step
     % Check sign and dimension of null space
     null_chk.Zpls = Zpls;
     null_chk.ps_ind = ii;
-%     [delt_Z_prev,null_chk] = NullCheck(delt_Z_prev,delt_Z_prev_old,null_chk);
-    [delt_Z_prev,null_chk] = NullCheck_New(delt_Z_prev,delt_Z_prev_old,null_chk);
+    [delt_Z_prev,null_chk] = NullCheck(delt_Z_prev,delt_Z_prev_old,null_chk);
     
     % Label Z from converged solution as Zprev, since new Z will be Zpls
     Z_prev = [X(1); X(5); T_half];
