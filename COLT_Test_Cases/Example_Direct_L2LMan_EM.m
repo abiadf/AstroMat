@@ -230,6 +230,11 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 % Calculate number of variable nodes per segment without slack variables
 l = colt.n_state*(colt.N+1)/2 + colt.n_cntrl;
 
+% Preallocate matrices
+Z_mat = zeros(l,colt.n_seg);
+lb_mat = zeros(l,colt.n_seg);
+ub_mat = zeros(l,colt.n_seg);
+
 for ii = 1:colt.n_seg
     
     % Define state, control, and slack variable for current segment
@@ -240,10 +245,16 @@ for ii = 1:colt.n_seg
     x_col = reshape(xis_var_i,[colt.n_state*(colt.N+1)/2 1]);
     Z_mat(:,ii) = [uis_var_i; x_col];
     
+    % Formulate lower and upper bounds on state variables
+    lb_mat(:,ii) = [0;-Inf.*ones(3,1); -Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
+    ub_mat(:,ii) = [colt.Tmax;Inf.*ones(3,1); Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
+      
 end
 
 % Reshape Z_mat into column vector
 Z0 = reshape(Z_mat,[l*colt.n_seg 1]);
+colt.lb_Z = reshape(lb_mat,[l*colt.n_seg 1]);
+colt.ub_Z = reshape(ub_mat,[l*colt.n_seg 1]);
 
 % Perturb Z0 slightly to prevent immediate convergence
 % Z0 = 0.95*Z0;
