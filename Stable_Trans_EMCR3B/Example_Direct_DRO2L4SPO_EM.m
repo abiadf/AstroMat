@@ -52,7 +52,9 @@ colt.DiffType = 'Forward'; % finite difference method for numerical jacobian
 
 %%% Collocation Inputs %%%
 colt.N = 7; % degree of polynomials
-colt.n_seg = 80; % initial number of segments
+colt.n_seg_revi = 40; % number of segments for initial orbit revs
+colt.n_seg_revf = 40; % number of segments for final orbit revs
+colt.n_seg = colt.n_seg_revi+colt.n_seg_revf; % initial number of segments
 colt.n_state = 7; % number of state variables
 colt.n_cntrl = 4; % number of control variables
 colt.n_slack = 2; % number of slack variables
@@ -106,7 +108,7 @@ colt.Tmax = colt.Tmax_dim*(colt.t_ch^2/(1000*colt.l_ch*colt.m_ch)); % [nondimens
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Import L1 NRHO and DRO orbits selected for transfer
-load EM_L1DRO_2_L4SPO
+load EM_DRO_2_L4SPO
 x0_spo = x0_spo_slct;
 tf_spo = tf_spo_slct;
 x0_dro = x0_dro_slct;
@@ -263,7 +265,7 @@ colt.OptMeth = 'fmincon'; % fmincon optimization method used
 % %% Run Direct Transcription Algorithm %%
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans_InEq(Z0,t_bnd,t_var,colt);
+[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load direct transcription result
 % save('DRO2L4SPO_OptTrans_n80_N7','Z','x_bnd','t_var','t_bnd','C','colt')

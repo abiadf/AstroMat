@@ -30,18 +30,16 @@ function [Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = RevWrap_Discrt(colt)
 % Extract necessary parameters from colt stucture
 NodeSpace = colt.NodeSpace;
 N = colt.N;
-n_seg_main = colt.n_seg;
+n_seg = colt.n_seg;
 n_cntrl = colt.n_cntrl;
 n_state = colt.n_state;
 n_slack = colt.n_slack;
-phi0 = colt.phi0;
 m0 = colt.m0;
-Tmax = colt.Tmax;
-options = colt.options;
 mu = colt.mu;
 OrbIC = colt.OrbIC;
 n_rev = colt.n_rev;
-l_ch = colt.l_ch;
+n_seg_revi = colt.n_seg_revi;
+n_seg_revf = colt.n_seg_revi;
 
 % Extract initial and final orbit IC
 X_init = OrbIC(1:6);
@@ -56,17 +54,6 @@ n_revf = n_rev(2);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Calculate Boundary and Variable Node Times %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Define number of segments for each phase of the initial guess
-n_seg_revi = 30; % number of segments for initial orbit revs
-n_seg_revf = 30; % number of segments for final orbit revs
-n_seg = n_seg_revi+n_seg_revf; % total number of segments, initially
-
-% Check that total number of segments matches number of segments defined in
-% main script
-if n_seg ~= n_seg_main
-    error('Number of segments defined in initial guess does not match number of segments defined in main script')
-end
 
 % Define propagation times for each phase of the initial guess
 t_revi = n_revi*T_init;
