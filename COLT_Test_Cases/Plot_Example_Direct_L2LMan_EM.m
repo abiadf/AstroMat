@@ -7,6 +7,7 @@
 %
 % Originally Written by: R. Pritchett, 09/23/2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+close all
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Extract Data Necessary for Plotting from Structures %%
@@ -200,8 +201,12 @@ for ii = 1:colt.n_seg
     
 end
 
-% Add legend
-legend([h1 h2],{'Thrust','Coast'})
+% Add legend, modify if no coast segments exist
+if exist('h2','var')
+    legend([h1 h2],{'Thrust','Coast'})
+else
+    legend(h1,{'Thrust'})
+end
 
 hold off
     

@@ -1,5 +1,5 @@
-function [c,ceq,Dc,Dceq] = DrctTrans_Con_Eq(Z,t_bnd,colt)
-% function [c,ceq,Dc,Dceq] = DrctTrans_Con_InEq(Z,t_bnd,colt)
+function [c,ceq,Dc,Dceq] = DrctTrans_Con(Z,t_bnd,colt,collmat)
+% function [c,ceq,Dc,Dceq] = DrctTrans_Con(Z,t_bnd,colt)
 % 
 % This function calculates the equality and inequality constraints of the 
 % low-thrust optimization problem that employs direct transcription. The 
@@ -17,10 +17,10 @@ function [c,ceq,Dc,Dceq] = DrctTrans_Con_Eq(Z,t_bnd,colt)
 %    Dc          matrix of partial derivatives of the inequality 
 %                constraints with respect to the design variables 
 %    Dceq        matrix of partial derivatives of the equality 
-%                constraints with respect to the design variables 
+%                constraints with respect to the design variables
 %
-% Written by R. Pritchett, 6/07/16
-% Last Update: R. Pritchett, 02/01/2017
+% Written by R. Pritchett, 03/22/2017
+% Last Update: R. Pritchett, 03/22/2017
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -38,7 +38,7 @@ n_coast = colt.n_coast;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Compute defect constraints
-[FC,x0,xf] = Opt_Con_Defect(Z,t_bnd,colt);
+[FC,x0,xf] = Opt_Con_Defect(Z,t_bnd,colt,collmat);
 
 % Compute boundary equality constraints
 if n_coast > 0 % if coast parameters are included
@@ -49,7 +49,7 @@ end
 
 % Assemble equality constraints
 ceq = [FC;FB_eq]; % equality constraints
-ceq_l = length(ceq); % number of equality constraints
+colt.ceq_l = length(ceq); % number of equality constraints
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Compute Inequality Constraints %%
@@ -60,7 +60,6 @@ ceq_l = length(ceq); % number of equality constraints
 % 
 % % Assemble inequality constraints
 % c = FB_ineq;
-% c_l = length(c);
 
 % Define c as empty because this function does not inlude inequality constraints
 c = [];
@@ -70,7 +69,7 @@ c = [];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Compute partial derivatives with respect to equality constraints
-[Dceq] = Opt_MakeDF_Eq(Z,t_bnd,ceq_l,colt);
+[Dceq] = Opt_MakeDF_Eq(Z,t_bnd,colt,collmat);
 Dceq = transpose(Dceq); % Matlab requires the transpose of what my algorithm produces
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

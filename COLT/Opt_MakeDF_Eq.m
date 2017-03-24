@@ -1,5 +1,5 @@
-function [DF_sparse_Eq] = Opt_MakeDF_Eq(Z,t_bnd,ceq_l,colt)
-% function [DF_sparse_Eq] = Opt_MakeDF_InEq(Z,t_bnd,colt)
+function [DF_sparse_Eq] = Opt_MakeDF_Eq(Z,colt,collmat)
+% function [DF_sparse_Eq] = Opt_MakeDF_Eq(Z,t_bnd,colt)
 % 
 % This function runs setup for and then calls a function to compute the 
 % partial derivatives of the constraints of the direct transcription 
@@ -11,7 +11,6 @@ function [DF_sparse_Eq] = Opt_MakeDF_Eq(Z,t_bnd,ceq_l,colt)
 % INPUTS:
 %    Z          design variable vector (n_coast+(n_state+n_cntrl+n_slack)*n_seg*(N+1)/2 x 1)
 %    t_bnd      non-normalized times at  boundary nodes (n_seg x 1)
-%    ceq_l      number of equality constraints in direct transcription problem
 %    colt       structure containing collocation and optimization parameters
 %
 % OUTPUTS:
@@ -28,48 +27,17 @@ function [DF_sparse_Eq] = Opt_MakeDF_Eq(Z,t_bnd,ceq_l,colt)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Extract necessary parameters from colt stucture
-NodeSpace = colt.NodeSpace;
-N = colt.N;
-n_seg = colt.n_seg;
-n_state = colt.n_state;
 n_coast = colt.n_coast;
+ceq_l = colt.ceq_l;
+% c_l = colt.c_l;
     
-% Calculate constants
-[~,A,A_inv,B,D,W] = CollSetup(N,NodeSpace); % LG is interpolation method
-
-% Calculate segment time intervals, divide by 2, and vectorize
-t_seg = repmat(reshape(diff(t_bnd),[1 1 n_seg]),[n_state,(N+1)/2])/2; % for variable nodes
-t_seg_d = repmat(reshape(diff(t_bnd),[1 1 n_seg]),[n_state,(N-1)/2])/2; % for defect nodes
-
-% Store collocation matrices in structure
-collmat = struct;
-
-% Copy constant matrices into three dimensional matrices
-collmat.A = repmat(A,[1 1 n_seg]);
-collmat.Ainv = repmat(A_inv,[1 1 n_seg]);
-collmat.Bnew = repmat(B(:,2:end-1),[1 1 n_seg]);
-collmat.B0 = repmat(B(:,1),[1 1 n_seg]);
-collmat.Bf = repmat(B(:,end),[1 1 n_seg]);
-collmat.Dnew = repmat(D,[1 1 n_seg]);
-collmat.Wnew = repmat(diag(W).',[n_state 1 n_seg]);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Sparse Matrix Setup %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Calculate indices associated with nonzeros of the collocation constraint jacobian
-[iRowC,jColC] = JacIndC_LT(colt);
-
-% Calculate indices associated with boundary constraints in the jacobian
-if n_coast > 0 % if coast parameters are included
-    [iRowB,jColB] = JacIndB_LT_Coast(colt);
-else
-    [iRowB_Eq,jColB_Eq] = JacIndB_LT_Eq(colt);
-end
-
-% Assemble row and column indices into individual column vectors
-iRow_Eq = [iRowC; iRowB_Eq]; 
-jCol_Eq = [jColC; jColB_Eq];
+% Extract necessary parameters from collmat stucture
+t_seg = collmat.t_seg;
+t_seg_d = collmat.t_seg_d;
+iRow_Eq = collmat.iRow_Eq;
+jCol_Eq = collmat.jCol_Eq;
+% iRow_InEq = collmat.iRow_InEq;
+% jCol_InEq = collmat.jCol_InEq;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Calculate Partial Derivatives of the Jacobian %%
@@ -83,10 +51,12 @@ if n_coast > 0 % if coast parameters are included
     [DF] = MakeDF_LT_Coast(Z,t_seg,t_seg_d,collmat,colt);
 else % if no coast parameters are included
     [DF_Eq] = MakeDF_LT_Eq(Z,t_seg,t_seg_d,collmat,colt);
+%     [DF_InEq] = MakeDF_LT_InEq(colt);
 end
 
 % Convert DF into a sparse matrix
 DF_sparse_Eq = sparse(iRow_Eq,jCol_Eq,DF_Eq,ceq_l,Zl); % for complex step case
+% DF_sparse_InEq = sparse(iRow_InEq,jCol_InEq,DF_InEq,c_l,Zl); % for complex step case
 
 %-------------------------------------------------------------------------%
 % Finite Difference Check of Jacobian Matrix %

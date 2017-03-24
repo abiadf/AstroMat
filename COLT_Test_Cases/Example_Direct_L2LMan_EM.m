@@ -49,6 +49,7 @@ colt.atten = 1; % attenuation factor for Newton's method step size 1/atten
 colt.StpOff = 50/l_ch; % [nondimensional] manifold stepoff distance, format x (in km)/l_ch
 colt.PorM = {{'minus'}, {'plus'}}; % define manifold stepoff direction for initial and final manifolds
 colt.newt_tol = 1e-8; % tolerance for Newton's Method
+colt.max_iter = 2000; % maximum iterations allowed before calculation terminates
 colt.DiffType = 'Forward'; % finite difference method for numerical jacobian
 
 %%% Collocation Inputs %%%
@@ -84,12 +85,12 @@ colt.rem_tol = 1e-10; % Max error magnitude allowed for segment removal loop
 colt.add_tol = 1e-10; % Min error magnitude allowed for segment addition loop
 
 %%% Optimization Inputs %%%
+% Note: optimization options defined within DirectTrans_InEq.m function
+colt.opt_max_fevals = 1000000; % maximum number of function evaluations permitted before optimization algorithm terminates
+colt.opt_max_iter = 10000; % maximum number of iterations permitted before optimization algorithm terminates
 colt.OptMeth = 'NoOpt'; % no optimization method used
 % colt.OptMeth = 'fmincon'; % fmincon optimization method used
 % colt.OptMeth = 'IPOPT'; % IPOPT optimization method used
-colt.options_opt = optimset('Algorithm','interior-point','Display','iter-detailed',...
-    'MaxFunEvals',1000000,'GradConstr','on',...
-    'GradObj','on','DerivativeCheck','off');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Define/Load Initial Guess %%
@@ -211,7 +212,7 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 %% Solve Collocation Problem before Direct Transcription %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
+% [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load direct transcription result
 % save('DirectTransL2L_NoOpt_NoMesh_FixEnd_N7','Z','x_bnd','t_var','t_bnd','C')
@@ -221,8 +222,8 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 %% Modify Collocation Output and Settings to Run Direct Transcription Algorithm %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% % If skipping initial collocation step then define Z=Z0
-% Z = Z0;
+% If skipping initial collocation step then define Z=Z0
+Z = Z0;
 
 % Remove slack variables from Z
 [~,xis,uis,~,~,~] = Z23D(Z,colt);
@@ -268,21 +269,21 @@ colt.Mesh = 'NoMesh'; % no mesh refinement used
 % colt.Mesh = 'deBoor'; % de Boor mesh refinement method used
 
 % Define optimization method for direct transcription
+% Note: optimization options defined within DirectTrans_InEq.m function
+colt.opt_max_fevals = 1000000; % maximum number of function evaluations permitted before optimization algorithm terminates
+colt.opt_max_iter = 10000; % maximum number of iterations permitted before optimization algorithm terminates
 % colt.OptMeth = 'NoOpt'; % no optimization method used
 colt.OptMeth = 'fmincon'; % fmincon optimization method used
 % colt.OptMeth = 'IPOPT'; % IPOPT optimization method used
-colt.options_opt = optimset('Algorithm','interior-point','Display','iter-detailed',...
-    'MaxFunEvals',1000000,'GradConstr','on',...
-    'GradObj','on','DerivativeCheck','off');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Run Direct Transcription Algorithm %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans_InEq(Z0,t_bnd,t_var,colt);
+% [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load direct transcription result
-% save('L2LTrans_OptResult_NoColl_v2','Z','x_bnd','t_var','t_bnd','C','colt')
+% save('L2LTrans_OptResult_NoColl_wBnd_v2','Z','x_bnd','t_var','t_bnd','C','colt')
 % load DirectTrans_NoOpt_deBoor_FixEnd_N7.mat
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -290,7 +291,9 @@ colt.options_opt = optimset('Algorithm','interior-point','Display','iter-detaile
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%ss
 
 % % Load previously computed results
-% load('L2LTrans_OptResult_v1.mat')
+% load('L2LTrans_OptResult_wColl_wBnd_v2.mat')
+load('L2LTrans_OptResult_NoColl_wBnd_v2.mat')
+% load('L2LTrans_OptResult_NoColl_v2.mat')
 
 % Run plotting script
-run('Plot_Example_Direct_L2LMan_EM_FixedEnd')
+run('Plot_Example_Direct_L2LMan_EM')

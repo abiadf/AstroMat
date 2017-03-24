@@ -26,7 +26,8 @@ function [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans_InEq(Z,t_bnd,t_var,colt)
 % Extract necessary parameters from colt stucture
 OptMeth = colt.OptMeth;
 Mesh = colt.Mesh;
-options_opt = colt.options_opt;
+opt_max_fevals = colt.opt_max_fevals;
+opt_max_iter = colt.opt_max_iter;
 
 %-------------------------------------------------------------------------%
     % Select Optimization Method %
@@ -73,10 +74,25 @@ switch OptMeth % Select case based on desired optimization method
             
             case 'NoMesh' % optimization with no mesh refinement
                 
+                % Calculate sparsity pattern of the Jacobian and Hessian matrices
+                [collmat] = OptSetup(t_bnd,colt);
+                
+                % Define optimization method options
+                options_opt = optimoptions('fmincon','Algorithm','interior-point',...
+                    'CheckGradients',false,'Display','iter-detailed',...
+                    'MaxFunctionEvaluations',opt_max_fevals,'MaxIterations',opt_max_iter,...
+                    'SpecifyConstraintGradient',true,'SpecifyObjectiveGradient',true);
+                 
+                % Run fmincon algorithm
+                [Z,fval,exitflag,output,lambda,grad,Hoff] = ...
+                    fmincon(@(Z) DrctTrans_Obj_MaxMf(Z,t_bnd,colt,collmat),Z,...
+                    [],[],[],[],colt.lb_Z,colt.ub_Z,...
+                    @(Z) DrctTrans_Con_Eq(Z,t_bnd,colt,collmat),options_opt);
+
                 % Run fmincon algorithm
                 [Z,fval,exitflag,output,lambda,grad] = ...
                     fmincon(@(Z) DrctTrans_Obj_MaxMf(Z,t_bnd,colt),Z,...
-                    [],[],[],[],colt.lb_Z,colt.ub_Z,@(Z) DrctTrans_Con_Eq(Z,t_bnd,colt),...
+                    [],[],[],[],colt.lb_Z,colt.ub_Z,@(Z) DrctTrans_Con(Z,t_bnd,colt),...
                     options_opt);
                 
                 % Process fmincon output

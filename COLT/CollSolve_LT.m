@@ -35,6 +35,8 @@ n_seg = colt.n_seg;
 n_state = colt.n_state;
 n_coast = colt.n_coast;
 newt_tol = colt.newt_tol;
+max_iter = colt.max_iter;
+max_iter_chk = false;
 atten_tol = colt.atten_tol;
 atten = colt.atten;
 
@@ -172,7 +174,7 @@ end
 %% Begin Newton's Method %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-while error > newt_tol
+while error > newt_tol || ~max_iter_chk
     
     if max(dZ) > atten_tol
         Z = Z + (1/atten).*dZ; % take quarter step
@@ -224,6 +226,12 @@ while error > newt_tol
     elseif strcmp('CEP',Mesh) == 1 % if CEP mesh
         fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %6.0f  %8.2f  %16.8e  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e \n',N,n_seg,Zl,Fl,DFl,sparsity,maxdZ,error,newti,remi,addi,maxe)
     end    
+    
+    % Check if max iteration limit has been reached
+    if newti == max_iter
+        max_iter_chk = true;
+        error('The solver stopped because the Newton''s method maximum iteration limit was reached')
+    end
     
 end
 

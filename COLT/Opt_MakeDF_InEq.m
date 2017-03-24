@@ -1,4 +1,16 @@
 function [DF_sparse_Eq,DF_sparse_InEq] = Opt_MakeDF_InEq(Z,t_bnd,ceq_l,c_l,colt)
+
+%-------------------------------------------------------------------------%
+% NEEDS REPAIR! %
+% Details: This function was used to compute the Jacobian matrices
+% for both equality and inequality constraints. Usage of fmincon was
+% modified such that inequality constraints are not employed for the time
+% being. However, this function was saved for future use. In the event
+% that inequality constraints are once again employed with fmincon this
+% function can be modified and used to compute the Jacobian matrix for the
+% inequality constraints.
+%-------------------------------------------------------------------------%
+
 % function [DF_sparse_InEq] = Opt_MakeDF_InEq(Z,t_bnd,colt)
 % 
 % This function runs setup for and then calls a function to compute the 

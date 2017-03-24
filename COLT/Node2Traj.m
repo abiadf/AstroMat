@@ -58,7 +58,7 @@ for ii = 1:n_seg
     tspan = [0 t_seg(ii)];
     
     % Integrate
-    [t_traj,x_traj] = ode113(@(t,in)EOM_CR3BP_LTCSI_NOCOS(t,in,cntrl,ce,mu),tspan,x_bnd0,options);
+    [t_traj,x_traj] = ode113(@(t,in)EOM_CR3BP_LTCSI(t,in,cntrl,ce,mu),tspan,x_bnd0,options);
     
     % Store numerical integration results
     x_traj_store{ii,1} = x_traj;

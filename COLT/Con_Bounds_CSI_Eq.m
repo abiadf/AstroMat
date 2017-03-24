@@ -22,7 +22,6 @@ function [FB_Eq] = Con_Bounds_CSI_Eq(uis,x0,xf,colt)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Extract necessary parameters from colt stucture
-N = colt.N;
 n_seg = colt.n_seg;
 n_state = colt.n_state;
 n_cntrl = colt.n_cntrl;
