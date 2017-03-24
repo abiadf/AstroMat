@@ -1,8 +1,7 @@
-% Example_Direct_L2LMan_EM.m
+% Example_Direct_DRO2NRHO_EM.m
 %
 % This script uses collocation and direct optimization to compute 
-% low-thrust transfers between periodic Lyapunov orbits that leverage invariant
-% manifold structures.
+% low-thrust transfers between periodic DRO orbits and L1 or L2 NRHO orbits
 %
 % Originally Written by: R. Pritchett, 01/11/2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -48,11 +47,12 @@ colt.atten = 1; % attenuation factor for Newton's method step size 1/atten
 colt.StpOff = 50/l_ch; % [nondimensional] manifold stepoff distance, format x (in km)/l_ch
 colt.PorM = {{'minus'}, {'plus'}}; % define manifold stepoff direction for initial and final manifolds
 colt.newt_tol = 1e-8; % tolerance for Newton's Method
+colt.max_iter = 2000; % maximum iterations allowed before calculation terminates
 colt.DiffType = 'Forward'; % finite difference method for numerical jacobian
 
 %%% Collocation Inputs %%%
 colt.N = 7; % degree of polynomials
-colt.n_seg = 60; % initial number of segments
+colt.n_seg = 80; % initial number of segments
 colt.n_state = 7; % number of state variables
 colt.n_cntrl = 4; % number of control variables
 colt.n_slack = 2; % number of slack variables
@@ -83,18 +83,17 @@ colt.rem_tol = 1e-10; % Max error magnitude allowed for segment removal loop
 colt.add_tol = 1e-10; % Min error magnitude allowed for segment addition loop
 
 %%% Optimization Inputs %%%
+% Note: optimization options defined within DirectTrans_InEq.m function
+colt.opt_max_fevals = 1000000; % maximum number of function evaluations permitted before optimization algorithm terminates
+colt.opt_max_iter = 10000; % maximum number of iterations permitted before optimization algorithm terminates
 colt.OptMeth = 'NoOpt'; % no optimization method used
 % colt.OptMeth = 'fmincon'; % fmincon optimization method used
 % colt.OptMeth = 'IPOPT'; % IPOPT optimization method used
-colt.options_opt = optimset('Algorithm','interior-point','Display','iter-detailed',...
-    'MaxFunEvals',1000000,'GradConstr','on',...
-    'GradObj','on','DerivativeCheck','off');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Define/Load Initial Guess %%
+%% Nondimensionalize User Inputs %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%% Nondimensionalize user inputs %%%
 colt.m_ch = colt.m0_dim; % override typical CR3BP characteristic mass and set as s/c mass
 colt.m0 = colt.m0_dim/colt.m_ch; % [nondimensional]
 % colt.Pmax = colt.Pmax_dim*(colt.t_ch^3/((1000*colt.l_ch)^2*colt.m_ch)); % [nondimensional]
@@ -103,33 +102,36 @@ colt.ce = colt.ce_dim.*(t_ch/(l_ch*1000));
 colt.Tmax = colt.Tmax_dim*(colt.t_ch^2/(1000*colt.l_ch*colt.m_ch)); % [nondimensional]
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Define and Propagate Initial and Final Periodic Orbits %%
+%% Load Data and Propagate Initial and Final Periodic Orbits %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Import L1 NRHO and DRO orbits selected for transfer
-load EM_L1DRO_2_L4SPO
-x0_spo = x0_spo_slct;
-tf_spo = tf_spo_slct;
+% Import L1 or L2 NRHO and DRO orbits selected for transfer
+% load EM_L1NRHO_2_DRO
+load EM_L2NRHO_2_DRO
+
+% Reassign variables from imported data
+x0_nrho = x0_nrho_slct;
+tf_nrho = tf_nrho_slct;
 x0_dro = x0_dro_slct;
 tf_dro = tf_dro_slct;
 
 % Combine initial and final orbit IC into single vector
-X_init = x0_dro;
-T_init = tf_dro;
-dro_revs = 3;
-X_fin = x0_spo;
-T_fin = tf_spo;
-spo_revs = 2;
+X_init = x0_nrho;
+T_init = tf_nrho;
+init_revs = 2;
+X_fin = x0_dro;
+T_fin = tf_dro;
+fin_revs = 3;
 
 % Calculate total transfer time
-T_trans = T_init*dro_revs + T_fin*spo_revs;
+T_trans = T_init*init_revs + T_fin*fin_revs;
 T_trans_dim = T_trans*t_ch/86400;
 
 % Combine initial and final orbit IC into single vector
 colt.OrbIC = [X_init,T_init,X_fin,T_fin];
 
 % Save number of initial and final orbit revs used in initial guess
-colt.n_rev = [dro_revs spo_revs];
+colt.n_rev = [init_revs fin_revs];
 
 % Propagate initial Lyap orbit
 [Xprop_init,Tprop_init,V_mono_init] = PeriodicProp(colt.OrbIC(1:7),colt);
@@ -159,8 +161,8 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 % 
 % % Define initial view
 % % view(18,16)
-% % view([-32,18])
-% view(0,90)
+% view([-32,18])
+% % view(0,90)
 % 
 % % Plot Moon - realistic image, function from Bonnie Prado
 % bodyplot('Textures\','Moon',r_M,(1-mu).*l_ch,0,0,0.9,[1 0 0],0); % create 3D surface from sphere coordinates
@@ -190,25 +192,10 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 % % x = xis_plot(1,:).*l_ch;
 % % y = xis_plot(2,:).*l_ch;
 % % z = xis_plot(3,:).*l_ch;
-% % c = 1:numel(t_var);      %# colors
+% % c = 1:numel(t_var); % # colors
 % % h = surface([x(:), x(:)], [y(:), y(:)], [z(:), z(:)], ...
 % %     [c(:), c(:)], 'EdgeColor','flat', 'FaceColor','none','linew',2);
 % % colormap( flipud(jet(numel(t_var))) )
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Perturb Initial Guess (Optional) %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Bias solution by constant amount
-% Z0_pert = Z0.*(1+.05);
-
-% Bias solution randomly for robustness testing - BIASED COAST
-% % rand(0,'twister');
-% min_bias = -00.50;
-% max_bias = 00.50;
-% rand_bias = (max_bias-min_bias).*rand(length(Z0),1) + min_bias;
-% check_range = [min(rand_bias) max(rand_bias)];
-% Z0_pert = Z0.*(ones(length(Z0),1) + rand_bias);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Solve Collocation Problem before Direct Transcription %%
@@ -216,67 +203,78 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 
 [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
-% Save or load direct transcription result
-% save('DirectTransL2L_NoOpt_NoMesh_FixEnd_N7','Z','x_bnd','t_var','t_bnd','C')
-% load DirectTrans_NoOpt_deBoor_FixEnd_N7.mat
+% Save or load collocation result
+% save('DRO2L1NRHO_NoOpt_n80_N7','Z','x_bnd','t_var','t_bnd','C','colt')
+% load DRO2L1NRHO_NoOpt_n80_N7
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Modify Collocation Output and Settings to Run Direct Transcription Algorithm %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% % Remove slack variables from Z
-% [~,xis,uis,~,~,~] = Z23D(Z,colt);
-% 
-% % Calculate number of variable nodes per segment without slack variables
-% l = colt.n_state*(colt.N+1)/2 + colt.n_cntrl;
-% 
-% for ii = 1:colt.n_seg
-%     
-%     % Define state, control, and slack variable for current segment
-%     xis_var_i = xis(:,:,ii);
-%     uis_var_i = uis(:,1,ii);
-%     
-%     % Formulate single column for Z_mat
-%     x_col = reshape(xis_var_i,[colt.n_state*(colt.N+1)/2 1]);
-%     Z_mat(:,ii) = [uis_var_i; x_col];
-%     
-% end
-% 
-% % Reshape Z_mat into column vector
-% Z0 = reshape(Z_mat,[l*colt.n_seg 1]);
-% 
-% % Perturb Z0 slightly to prevent immediate convergence
-% % Z0 = 0.95*Z0;
-% 
-% % Define number of slack variables to be zero
-% colt.n_slack = 0;
-% 
-% % Define mesh refinement method for direct transcription
-% % colt.Mesh = 'CEP'; % CEP mesh refinement method used
-% colt.Mesh = 'NoMesh'; % no mesh refinement used
-% % colt.Mesh = 'deBoor'; % de Boor mesh refinement method used
-% 
-% % Define optimization method for direct transcription
-% % colt.OptMeth = 'NoOpt'; % no optimization method used
-% colt.OptMeth = 'fmincon'; % fmincon optimization method used
-% % colt.OptMeth = 'IPOPT'; % IPOPT optimization method used
-% colt.options_opt = optimset('Algorithm','interior-point','Display','iter-detailed',...
-%     'MaxFunEvals',1000000,'GradConstr','on',...
-%     'GradObj','on','DerivativeCheck','off');
-% 
+% % If skipping initial collocation step then define Z=Z0
+% Z = Z0;
+
+% Remove slack variables from Z
+[~,xis,uis,~,~,~] = Z23D(Z,colt);
+
+% Calculate number of variable nodes per segment without slack variables
+l = colt.n_state*(colt.N+1)/2 + colt.n_cntrl;
+
+% Preallocate matrices
+Z_mat = zeros(l,colt.n_seg);
+lb_mat = zeros(l,colt.n_seg);
+ub_mat = zeros(l,colt.n_seg);
+
+for ii = 1:colt.n_seg
+    
+    % Define state, control, and slack variable for current segment
+    xis_var_i = xis(:,:,ii);
+    uis_var_i = uis(:,1,ii);
+    
+    % Formulate single column for Z_mat
+    x_col = reshape(xis_var_i,[colt.n_state*(colt.N+1)/2 1]);
+    Z_mat(:,ii) = [uis_var_i; x_col];
+    
+    % Formulate lower and upper bounds on state variables
+    lb_mat(:,ii) = [0;-Inf.*ones(3,1); -Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
+    ub_mat(:,ii) = [colt.Tmax;Inf.*ones(3,1); Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
+      
+end
+
+% Reshape Z_mat into column vector
+Z0 = reshape(Z_mat,[l*colt.n_seg 1]);
+colt.lb_Z = reshape(lb_mat,[l*colt.n_seg 1]);
+colt.ub_Z = reshape(ub_mat,[l*colt.n_seg 1]);
+
+% Define number of slack variables to be zero
+colt.n_slack = 0;
+
+% Define mesh refinement method for direct transcription
+% colt.Mesh = 'CEP'; % CEP mesh refinement method used
+colt.Mesh = 'NoMesh'; % no mesh refinement used
+% colt.Mesh = 'deBoor'; % de Boor mesh refinement method used
+
+% Define optimization method for direct transcription
+% Note: optimization options defined within DirectTrans_InEq.m function
+colt.opt_max_fevals = 1000000; % maximum number of function evaluations permitted before optimization algorithm terminates
+colt.opt_max_iter = 10000; % maximum number of iterations permitted before optimization algorithm terminates
+% colt.OptMeth = 'NoOpt'; % no optimization method used
+colt.OptMeth = 'fmincon'; % fmincon optimization method used
+% colt.OptMeth = 'IPOPT'; % IPOPT optimization method used
+
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % %% Run Direct Transcription Algorithm %%
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-% [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans_InEq(Z0,t_bnd,t_var,colt);
-% 
-% % Save or load direct transcription result
-% % save('DirectTransL2L_NoOpt_NoMesh_FixEnd_N7','Z','x_bnd','t_var','t_bnd','C')
-% % load DirectTrans_NoOpt_deBoor_FixEnd_N7.mat
+
+[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
+
+% Save or load direct transcription result
+save('DRO2L1NRHO_OptTrans_n80_N7','Z','x_bnd','t_var','t_bnd','C','colt')
+% load DRO2L1NRHO_OptTrans_n80_N7
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Process Results and Run Plotting Script %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%ss
 
 % Run plotting script
-run('Plot_Example_Direct_DRO2L4SPO_EM')
+run('Plot_Example_Direct_DRO2NRHO_EM')

@@ -1,9 +1,7 @@
-% Example_Direct_L2LMan_EM.m
+% Example_Direct_DRO2NRHO_EM.m
 %
 % This script uses collocation and direct optimization to compute 
-% low-thrust transfers between periodic Lyapunov orbits. The initial guess
-% leverages invariant manifold structures emanating from the initial and 
-% final periodic orbits.
+% low-thrust transfers between periodic DRO orbits and L1 or L2 NRHO orbits
 %
 % Originally Written by: R. Pritchett, 01/11/2016
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -54,7 +52,7 @@ colt.DiffType = 'Forward'; % finite difference method for numerical jacobian
 
 %%% Collocation Inputs %%%
 colt.N = 7; % degree of polynomials
-colt.n_seg = 70; % initial number of segments
+colt.n_seg = 80; % initial number of segments
 colt.n_state = 7; % number of state variables
 colt.n_cntrl = 4; % number of control variables
 colt.n_slack = 2; % number of slack variables
@@ -107,27 +105,30 @@ colt.Tmax = colt.Tmax_dim*(colt.t_ch^2/(1000*colt.l_ch*colt.m_ch)); % [nondimens
 %% Load Data and Propagate Initial and Final Periodic Orbits %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Load initial guess
-load LyapNearHetero
+% Import L1 NRHO and DRO orbits selected for transfer
+load EM_L1DRO_2_L4SPO
+x0_spo = x0_spo_slct;
+tf_spo = tf_spo_slct;
+x0_dro = x0_dro_slct;
+tf_dro = tf_dro_slct;
 
 % Combine initial and final orbit IC into single vector
-X_init = OrbIC_out(1:6);
-T_init = OrbIC_out(7);
-X_fin = OrbIC_out(8:13);
-T_fin = OrbIC_out(14);
-C_init = C_out(1);
-C_fin = C_out(2);
+X_init = x0_dro;
+T_init = tf_dro;
+dro_revs = 3;
+X_fin = x0_spo;
+T_fin = tf_spo;
+spo_revs = 2;
 
-% % Target initial and final halo orbits at desired Jacobi constant
-% [X_init,T_init] = PeriodicTarget_LyapJC(X0_init,T0_init,C0_init,mu);
-% [X_fin,T_fin] = PeriodicTarget_LyapJC(X0_fin,T0_fin,C0_fin,mu);
+% Calculate total transfer time
+T_trans = T_init*dro_revs + T_fin*spo_revs;
+T_trans_dim = T_trans*t_ch/86400;
 
 % Combine initial and final orbit IC into single vector
 colt.OrbIC = [X_init,T_init,X_fin,T_fin];
 
-% % Calculate Jacobi constants of converged halo orbits
-% [C_init] = JacCalc(X_init,mu);
-% [C_fin] = JacCalc(X_fin,mu);
+% Save number of initial and final orbit revs used in initial guess
+colt.n_rev = [dro_revs spo_revs];
 
 % Propagate initial Lyap orbit
 [Xprop_init,Tprop_init,V_mono_init] = PeriodicProp(colt.OrbIC(1:7),colt);
@@ -143,7 +144,7 @@ colt.V_mono = V_mono; % save monodromy matrices in colt
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Discretize initial guess
-[Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = L2LNearHeteroDiscrt(X,colt);
+[Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = RevWrap_Discrt(colt);
 
 % Save initial and final boundary nodes of initial guess
 colt.x0_des = [colt.OrbIC(1:6) 1];
@@ -157,7 +158,8 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 % 
 % % Define initial view
 % % view(18,16)
-% view(0,90)
+% view([-32,18])
+% % view(0,90)
 % 
 % % Plot Moon - realistic image, function from Bonnie Prado
 % bodyplot('Textures\','Moon',r_M,(1-mu).*l_ch,0,0,0.9,[1 0 0],0); % create 3D surface from sphere coordinates
@@ -182,15 +184,15 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 % plot3(xis_plot(1,:).*l_ch,xis_plot(2,:).*l_ch,xis_plot(3,:).*l_ch,'.b','MarkerSize',8)
 % plot3(xis_plot(1,1).*l_ch,xis_plot(2,1).*l_ch,xis_plot(3,1).*l_ch,'.g','MarkerSize',12)
 % plot3(xis_plot(1,end).*l_ch,xis_plot(2,end).*l_ch,xis_plot(3,end).*l_ch,'.r','MarkerSize',12)
-
-% % Plot trajectory as line with color gradient that is a function of time
-% x = xis_plot(1,:).*l_ch;
-% y = xis_plot(2,:).*l_ch;
-% z = xis_plot(3,:).*l_ch;
-% c = 1:numel(t_var); % # colors
-% h = surface([x(:), x(:)], [y(:), y(:)], [z(:), z(:)], ...
-%     [c(:), c(:)], 'EdgeColor','flat', 'FaceColor','none','linew',2);
-% colormap( flipud(jet(numel(t_var))) )
+% 
+% % % Plot trajectory as line with color gradient that is a function of time
+% % x = xis_plot(1,:).*l_ch;
+% % y = xis_plot(2,:).*l_ch;
+% % z = xis_plot(3,:).*l_ch;
+% % c = 1:numel(t_var); % # colors
+% % h = surface([x(:), x(:)], [y(:), y(:)], [z(:), z(:)], ...
+% %     [c(:), c(:)], 'EdgeColor','flat', 'FaceColor','none','linew',2);
+% % colormap( flipud(jet(numel(t_var))) )
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Solve Collocation Problem before Direct Transcription %%
@@ -198,9 +200,9 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 
 [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
-% Save or load direct transcription result
-% save('DirectTransL2L_NoOpt_NoMesh_FixEnd_N7','Z','x_bnd','t_var','t_bnd','C')
-% load DirectTrans_NoOpt_deBoor_FixEnd_N7.mat
+% Save or load collocation result
+% save('DRO2L4SPO_NoOpt_n80_N7','Z','x_bnd','t_var','t_bnd','C','colt')
+% load DRO2L4SPO_NoOpt_n80_N7
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Modify Collocation Output and Settings to Run Direct Transcription Algorithm %%
@@ -256,22 +258,20 @@ colt.opt_max_iter = 10000; % maximum number of iterations permitted before optim
 % colt.OptMeth = 'NoOpt'; % no optimization method used
 colt.OptMeth = 'fmincon'; % fmincon optimization method used
 % colt.OptMeth = 'IPOPT'; % IPOPT optimization method used
+ 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %% Run Direct Transcription Algorithm %%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Run Direct Transcription Algorithm %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
+[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans_InEq(Z0,t_bnd,t_var,colt);
 
 % Save or load direct transcription result
-save('L2LTrans_OptResult_wColl_wBnd_v2','Z','x_bnd','t_var','t_bnd','C','colt')
-% load('L2LTrans_OptResult_wColl_wBnd_v2.mat')
-% load('L2LTrans_OptResult_NoColl_wBnd_v2.mat')
-% load('L2LTrans_OptResult_NoColl_v2.mat')
+% save('DRO2L4SPO_OptTrans_n80_N7','Z','x_bnd','t_var','t_bnd','C','colt')
+% load DRO2L4SPO_OptTrans_n80_N7
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Process Results and Run Plotting Script %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%ss
 
 % Run plotting script
-run('Plot_Example_Direct_L2LMan_EM')
+run('Plot_Example_Direct_DRO2L4SPO_EM')
