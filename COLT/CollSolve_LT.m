@@ -174,7 +174,7 @@ end
 %% Begin Newton's Method %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-while error > newt_tol || ~max_iter_chk
+while error > newt_tol && ~max_iter_chk
     
     if max(dZ) > atten_tol
         Z = Z + (1/atten).*dZ; % take quarter step

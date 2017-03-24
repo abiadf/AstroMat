@@ -1,4 +1,4 @@
-function [J,gradient] = DrctTrans_Obj_MaxMf(Z,t_bnd,colt)
+function [J,gradient] = DrctTrans_Obj_MaxMf(Z,t_bnd,colt,collmat)
 % function [J,gradient] = DrctTrans_Obj_MaxMf(Z,t_bnd,colt)
 % 
 % This function calculates the value and gradient of the objective 
@@ -10,6 +10,7 @@ function [J,gradient] = DrctTrans_Obj_MaxMf(Z,t_bnd,colt)
 %    Z           design variable vector (n_coast+(n_state+n_cntrl+n_slack)*n_seg*(N+1)/2 x 1)
 %    t_bnd       non-normalized times at  boundary nodes (n_seg x 1)
 %    colt        structure containing collocation and optimization parameters
+%    collmat    structure containing constant collocation matrices
 %
 % OUTPUTS:
 %    J           scalar value of the objective function
@@ -25,7 +26,7 @@ function [J,gradient] = DrctTrans_Obj_MaxMf(Z,t_bnd,colt)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Obtain final node states using defect constraints function
-[~,~,xf] = Opt_Con_Defect(Z,t_bnd,colt);
+[~,~,xf] = Opt_Con_Defect(Z,colt,collmat);
 
 % Maximize final mass value
 J = -xf(7,end,end); % extract final mass value from state variable matrix
@@ -35,7 +36,5 @@ J = -xf(7,end,end); % extract final mass value from state variable matrix
 %% Compute Gradient of Objective Function %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[gradient] = DrctTrans_ObjGrad_MaxMf(Z,t_bnd,colt);
-
-
+[gradient] = DrctTrans_ObjGrad_MaxMf(Z,colt,collmat);
 

@@ -212,7 +212,7 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 %% Solve Collocation Problem before Direct Transcription %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
+[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load direct transcription result
 % save('DirectTransL2L_NoOpt_NoMesh_FixEnd_N7','Z','x_bnd','t_var','t_bnd','C')
@@ -222,8 +222,8 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 %% Modify Collocation Output and Settings to Run Direct Transcription Algorithm %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% If skipping initial collocation step then define Z=Z0
-Z = Z0;
+% % If skipping initial collocation step then define Z=Z0
+% Z = Z0;
 
 % Remove slack variables from Z
 [~,xis,uis,~,~,~] = Z23D(Z,colt);
@@ -280,10 +280,10 @@ colt.OptMeth = 'fmincon'; % fmincon optimization method used
 %% Run Direct Transcription Algorithm %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
+[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load direct transcription result
-% save('L2LTrans_OptResult_NoColl_wBnd_v2','Z','x_bnd','t_var','t_bnd','C','colt')
+save('L2LTrans_OptResult_wColl_wBnd_v2','Z','x_bnd','t_var','t_bnd','C','colt')
 % load DirectTrans_NoOpt_deBoor_FixEnd_N7.mat
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -292,7 +292,7 @@ colt.OptMeth = 'fmincon'; % fmincon optimization method used
 
 % % Load previously computed results
 % load('L2LTrans_OptResult_wColl_wBnd_v2.mat')
-load('L2LTrans_OptResult_NoColl_wBnd_v2.mat')
+% load('L2LTrans_OptResult_NoColl_wBnd_v2.mat')
 % load('L2LTrans_OptResult_NoColl_v2.mat')
 
 % Run plotting script

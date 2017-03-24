@@ -1,5 +1,5 @@
-function [grad] = DrctTrans_ObjGrad_MaxMf(Z,t_bnd,colt)
-% function [grad] = DrctTrans_ObjGrad_MaxMf(Z,xis,uis,t_bnd,colt)
+function [grad] = DrctTrans_ObjGrad_MaxMf(Z,colt,collmat)
+% function [grad] = DrctTrans_ObjGrad_MaxMf(Z,colt,collmat)
 % 
 % This function computes the gradient of the objective function employed in 
 % an optimization algorithm. Specifically this function is intended to be
@@ -12,8 +12,8 @@ function [grad] = DrctTrans_ObjGrad_MaxMf(Z,t_bnd,colt)
 %
 % INPUTS:
 %    Z        design variable vector (n_coast+(n_state+n_cntrl+n_slack)*n_seg*(N+1)/2 x 1)
-%    t_bnd    non-normalized times at  boundary nodes (n_seg x 1)
 %    colt     structure containing collocation and optimization parameters
+%    collmat    structure containing constant collocation matrices
 %
 % OUTPUTS:
 %    grad     gradient of the objective function employed by the optimization algorithm
@@ -25,37 +25,21 @@ function [grad] = DrctTrans_ObjGrad_MaxMf(Z,t_bnd,colt)
 %% Setup %%
 
 % Extract necessary parameters from colt stucture
-NodeSpace = colt.NodeSpace;
 N = colt.N;
 n_seg = colt.n_seg;
 n_state = colt.n_state;
 n_cntrl = colt.n_cntrl;
 n_slack = colt.n_slack;
 
+% Extract necessary parameters from collmat stucture
+t_seg = collmat.t_seg;
+t_seg_d = collmat.t_seg_d;
+
 % Calculate length of design vector
 Zl = length(Z);
 
 % Convert column vector of design variables to 3D matrices
-[zis,xis,uis,sis,coast_times,l] = Z23D(Z,colt);
-    
-% Calculate constants
-[~,A,A_inv,B,D,W] = CollSetup(N,NodeSpace); % LG is interpolation method
-
-% Calculate segment time intervals, divide by 2, and vectorize
-t_seg = repmat(reshape(diff(t_bnd),[1 1 n_seg]),[n_state,(N+1)/2])/2; % for variable nodes
-t_seg_d = repmat(reshape(diff(t_bnd),[1 1 n_seg]),[n_state,(N-1)/2])/2; % for defect nodes
-
-% Store collocation matrices in structure
-collmat = struct;
-
-% Copy constant matrices into three dimensional matrices
-collmat.A = repmat(A,[1 1 n_seg]);
-collmat.Ainv = repmat(A_inv,[1 1 n_seg]);
-collmat.Bnew = repmat(B(:,2:end-1),[1 1 n_seg]);
-collmat.B0 = repmat(B(:,1),[1 1 n_seg]);
-collmat.Bf = repmat(B(:,end),[1 1 n_seg]);
-collmat.Dnew = repmat(D,[1 1 n_seg]);
-collmat.Wnew = repmat(diag(W).',[n_state 1 n_seg]);
+[~,xis,uis,~,~,l] = Z23D(Z,colt);
 
 % Set step size for complex step differentiation
 stpsz = 1e-100; 

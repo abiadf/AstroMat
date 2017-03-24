@@ -10,6 +10,7 @@ function [c,ceq,Dc,Dceq] = DrctTrans_Con(Z,t_bnd,colt,collmat)
 %    Z           design variable vector (n_coast+(n_state+n_cntrl+n_slack)*n_seg*(N+1)/2 x 1)
 %    t_bnd       non-normalized times at  boundary nodes (n_seg x 1)
 %    colt        structure containing collocation and optimization parameters
+%    collmat    structure containing constant collocation matrices
 %
 % OUTPUTS:
 %    c           vector of inequality constraints
@@ -38,7 +39,7 @@ n_coast = colt.n_coast;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Compute defect constraints
-[FC,x0,xf] = Opt_Con_Defect(Z,t_bnd,colt,collmat);
+[FC,x0,xf] = Opt_Con_Defect(Z,colt,collmat);
 
 % Compute boundary equality constraints
 if n_coast > 0 % if coast parameters are included
@@ -69,7 +70,7 @@ c = [];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Compute partial derivatives with respect to equality constraints
-[Dceq] = Opt_MakeDF_Eq(Z,t_bnd,colt,collmat);
+[Dceq] = Opt_MakeDF_Eq(Z,colt,collmat);
 Dceq = transpose(Dceq); % Matlab requires the transpose of what my algorithm produces
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
