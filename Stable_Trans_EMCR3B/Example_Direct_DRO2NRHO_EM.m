@@ -52,7 +52,9 @@ colt.DiffType = 'Forward'; % finite difference method for numerical jacobian
 
 %%% Collocation Inputs %%%
 colt.N = 7; % degree of polynomials
+init_revs = 3; % total number of revs about initial orbit
 colt.n_seg_revi = 40; % number of segments for initial orbit revs
+fin_revs = 3; % total number of revs about final orbit
 colt.n_seg_revf = 40; % number of segments for final orbit revs
 colt.n_seg = colt.n_seg_revi+colt.n_seg_revf; % initial number of segments
 colt.n_state = 7; % number of state variables
@@ -78,7 +80,7 @@ colt.Mesh = 'CEP'; % CEP mesh refinement method used
 %%% de Boor Mesh Refinement Tolerances %%%
 colt.ctol = 1e-8; % max error tolerance for de Boor method
 colt.Dec = 2; % number of decimal places to examine in error distribution check
-colt.maxdiffe = 100; % maximum difference between decimal places allowed in error distribution check
+colt.maxdiffe = 2000; % maximum difference between decimal places allowed in error distribution check
 
 %%% CEP Mesh Refinement Tolerances %%%
 colt.rem_tol = 1e-10; % Max error magnitude allowed for segment removal loop
@@ -108,8 +110,8 @@ colt.Tmax = colt.Tmax_dim*(colt.t_ch^2/(1000*colt.l_ch*colt.m_ch)); % [nondimens
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Import L1 or L2 NRHO and DRO orbits selected for transfer
-% load EM_L1NRHO_2_DRO
-load EM_L2NRHO_2_DRO
+load EM_L1NRHO_2_DRO
+% load EM_L2NRHO_2_DRO
 
 % Reassign variables from imported data
 x0_nrho = x0_nrho_slct;
@@ -120,10 +122,8 @@ tf_dro = tf_dro_slct;
 % Combine initial and final orbit IC into single vector
 X_init = x0_nrho;
 T_init = tf_nrho;
-init_revs = 2;
 X_fin = x0_dro;
 T_fin = tf_dro;
-fin_revs = 3;
 
 % Calculate total transfer time
 T_trans = T_init*init_revs + T_fin*fin_revs;
@@ -206,69 +206,69 @@ colt.xf_des = [colt.OrbIC(8:13) 1];
 [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load collocation result
-% save('DRO2L1NRHO_NoOpt_n80_N7','Z','x_bnd','t_var','t_bnd','C','colt')
+save('DRO2L1NRHO_NoOpt_rev33_n80','Z','x_bnd','t_var','t_bnd','C','colt')
 % load DRO2L1NRHO_NoOpt_n80_N7
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Modify Collocation Output and Settings to Run Direct Transcription Algorithm %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% % If skipping initial collocation step then define Z=Z0
-% Z = Z0;
+% % % If skipping initial collocation step then define Z=Z0
+% % Z = Z0;
+% 
+% % Remove slack variables from Z
+% [~,xis,uis,~,~,~] = Z23D(Z,colt);
+% 
+% % Calculate number of variable nodes per segment without slack variables
+% l = colt.n_state*(colt.N+1)/2 + colt.n_cntrl;
+% 
+% % Preallocate matrices
+% Z_mat = zeros(l,colt.n_seg);
+% lb_mat = zeros(l,colt.n_seg);
+% ub_mat = zeros(l,colt.n_seg);
+% 
+% for ii = 1:colt.n_seg
+%     
+%     % Define state, control, and slack variable for current segment
+%     xis_var_i = xis(:,:,ii);
+%     uis_var_i = uis(:,1,ii);
+%     
+%     % Formulate single column for Z_mat
+%     x_col = reshape(xis_var_i,[colt.n_state*(colt.N+1)/2 1]);
+%     Z_mat(:,ii) = [uis_var_i; x_col];
+%     
+%     % Formulate lower and upper bounds on state variables
+%     lb_mat(:,ii) = [0;-Inf.*ones(3,1); -Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
+%     ub_mat(:,ii) = [colt.Tmax;Inf.*ones(3,1); Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
+%       
+% end
+% 
+% % Reshape Z_mat into column vector
+% Z0 = reshape(Z_mat,[l*colt.n_seg 1]);
+% colt.lb_Z = reshape(lb_mat,[l*colt.n_seg 1]);
+% colt.ub_Z = reshape(ub_mat,[l*colt.n_seg 1]);
+% 
+% % Define number of slack variables to be zero
+% colt.n_slack = 0;
+% 
+% % Define mesh refinement method for direct transcription
+% % colt.Mesh = 'CEP'; % CEP mesh refinement method used
+% colt.Mesh = 'NoMesh'; % no mesh refinement used
+% % colt.Mesh = 'deBoor'; % de Boor mesh refinement method used
+% 
+% % Define optimization method for direct transcription
+% % Note: optimization options defined within DirectTrans_InEq.m function
+% colt.opt_max_fevals = 1000000; % maximum number of function evaluations permitted before optimization algorithm terminates
+% colt.opt_max_iter = 10000; % maximum number of iterations permitted before optimization algorithm terminates
+% % colt.OptMeth = 'NoOpt'; % no optimization method used
+% colt.OptMeth = 'fmincon'; % fmincon optimization method used
+% % colt.OptMeth = 'IPOPT'; % IPOPT optimization method used
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Run Direct Transcription Algorithm %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Remove slack variables from Z
-[~,xis,uis,~,~,~] = Z23D(Z,colt);
-
-% Calculate number of variable nodes per segment without slack variables
-l = colt.n_state*(colt.N+1)/2 + colt.n_cntrl;
-
-% Preallocate matrices
-Z_mat = zeros(l,colt.n_seg);
-lb_mat = zeros(l,colt.n_seg);
-ub_mat = zeros(l,colt.n_seg);
-
-for ii = 1:colt.n_seg
-    
-    % Define state, control, and slack variable for current segment
-    xis_var_i = xis(:,:,ii);
-    uis_var_i = uis(:,1,ii);
-    
-    % Formulate single column for Z_mat
-    x_col = reshape(xis_var_i,[colt.n_state*(colt.N+1)/2 1]);
-    Z_mat(:,ii) = [uis_var_i; x_col];
-    
-    % Formulate lower and upper bounds on state variables
-    lb_mat(:,ii) = [0;-Inf.*ones(3,1); -Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
-    ub_mat(:,ii) = [colt.Tmax;Inf.*ones(3,1); Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
-      
-end
-
-% Reshape Z_mat into column vector
-Z0 = reshape(Z_mat,[l*colt.n_seg 1]);
-colt.lb_Z = reshape(lb_mat,[l*colt.n_seg 1]);
-colt.ub_Z = reshape(ub_mat,[l*colt.n_seg 1]);
-
-% Define number of slack variables to be zero
-colt.n_slack = 0;
-
-% Define mesh refinement method for direct transcription
-% colt.Mesh = 'CEP'; % CEP mesh refinement method used
-colt.Mesh = 'NoMesh'; % no mesh refinement used
-% colt.Mesh = 'deBoor'; % de Boor mesh refinement method used
-
-% Define optimization method for direct transcription
-% Note: optimization options defined within DirectTrans_InEq.m function
-colt.opt_max_fevals = 1000000; % maximum number of function evaluations permitted before optimization algorithm terminates
-colt.opt_max_iter = 10000; % maximum number of iterations permitted before optimization algorithm terminates
-% colt.OptMeth = 'NoOpt'; % no optimization method used
-colt.OptMeth = 'fmincon'; % fmincon optimization method used
-% colt.OptMeth = 'IPOPT'; % IPOPT optimization method used
-
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% %% Run Direct Transcription Algorithm %%
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
+% [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load direct transcription result
 % save('DRO2L1NRHO_OptTrans_n80_N7','Z','x_bnd','t_var','t_bnd','C','colt')
