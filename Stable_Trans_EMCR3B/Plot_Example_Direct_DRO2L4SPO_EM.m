@@ -9,40 +9,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Extract Data Necessary for Plotting from Structures %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% % Matrices from integration timestep structure
-% XT = intstp_dscrt.XT;
-% lambda_intstp = intstp_dscrt.lambda_intstp;
-% lambda_m_intstp = intstp_dscrt.lambda_m_intstp;
-% t_prop = intstp_dscrt.t_prop;
-% T_intstp = intstp_dscrt.T_intstp; 
-% T_intstp_dim = intstp_dscrt.T_intstp_dim; 
-% u_intstp = intstp_dscrt.u_intstp; 
-% P_intstp = intstp_dscrt.P_intstp;
-% 
-% % Matrices from boundary node structure
-% XT_bnd = bndnd_dscrt.XT_bnd;
-% lambda_bnd = bndnd_dscrt.lambda_bnd;
-% lambda_m_bnd = bndnd_dscrt.lambda_m_bnd; 
-% t_prop_bnd = bndnd_dscrt.t_bnd;
-% T_bnd = bndnd_dscrt.T_bnd; 
-% T_bnd_dim = bndnd_dscrt.T_bnd_dim; 
-% u_bnd = bndnd_dscrt.u_bnd; 
-% P_bnd = bndnd_dscrt.P_bnd;
-% 
-% % Matrices from variable node structure
-% XT_var = varnd_dscrt.XT_var;
-% lambda_var = varnd_dscrt.lambda_var;
-% lambda_m_var = varnd_dscrt.lambda_m_var; 
-% t_prop_var = varnd_dscrt.t_var;
-% T_var = varnd_dscrt.T_var; 
-% T_var_dim = varnd_dscrt.T_var_dim; 
-% u_var = varnd_dscrt.u_var; 
-% P_var = varnd_dscrt.P_var;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Setup Configuration Space Plot %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -88,47 +54,6 @@ plot3(Xprop_init(:,1).*l_ch,Xprop_init(:,2).*l_ch,Xprop_init(:,3).*l_ch,':k','Li
 plot3(Xprop_fin(:,1).*l_ch,Xprop_fin(:,2).*l_ch,Xprop_fin(:,3).*l_ch,':k','LineWidth',1); % final halo orbit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Plot Discretized Initial Guess in Configuration Space %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% % Process direct transcription results
-% [ZPlot_init] = Z2Plot(Z0,x_bnd,t_bnd,t_var,colt);
-% 
-% % Save results in structure for output to plotting script
-% x_bnd_plot_init = ZPlot_init.x_bnd_plot;
-% x_var_plot_init = ZPlot_init.x_var_plot;
-% u_var_init = ZPlot_init.u_var;
-% T_var_init = ZPlot_init.T_var;
-% P_var_init = ZPlot_init.P_var;
-% uT_var_init = ZPlot_init.uT_var;
-% X_tau1_init = ZPlot_init.X_tau1;
-% X_tau2_init = ZPlot_init.X_tau2;
-% X_alph1_init = ZPlot_init.X_alph1;
-% X_alph2_init = ZPlot_init.X_alph2;
-
-% % Plot coast arcs
-% plot3(X_tau1_init(:,1),X_tau1_init(:,2),X_tau1_init(:,3),':b','LineWidth',2) % orbit 1 coast arc
-% plot3(X_tau1_init(end,1),X_tau1_init(end,2),X_tau1_init(end,3),'.b','MarkerSize',20) % end of orbit 1 coast arc
-% plot3(X_tau2_init(:,1),X_tau2_init(:,2),X_tau2_init(:,3),':r','LineWidth',2) % orbit 2 coast arc
-% plot3(X_tau2_init(end,1),X_tau2_init(end,2),X_tau2_init(end,3),'.r','MarkerSize',20) % end of orbit 2 coast arc
-
-% % Plot manifold arcs
-% plot3(X_alph1_init(:,1),X_alph1_init(:,2),X_alph1_init(:,3),':c','LineWidth',2) % orbit 1 coast arc
-% plot3(X_alph1_init(end,1),X_alph1_init(end,2),X_alph1_init(end,3),'.c','MarkerSize',20) % end of orbit 1 coast arc
-% plot3(X_alph2_init(:,1),X_alph2_init(:,2),X_alph2_init(:,3),':m','LineWidth',2) % orbit 2 coast arc
-% plot3(X_alph2_init(end,1),X_alph2_init(end,2),X_alph2_init(end,3),'.m','MarkerSize',20) % end of orbit 2 coast arc
-
-% Plot boundary nodes
-% plot3(x_bnd_plot_init(:,1),x_bnd_plot_init(:,2),x_bnd_plot_init(:,3),'ok','MarkerSize',5);
-
-% Plot variable nodes
-% plot3(x_var_plot_init(:,1),x_var_plot_init(:,2),x_var_plot_init(:,3),'or','MarkerSize',5);
-
-% Plot thrust vectors
-% quiver3(x_var_plot_init(:,1),x_var_plot_init(:,2),x_var_plot_init(:,3),...
-%     uT_var_init(:,1),uT_var_init(:,2),uT_var_init(:,3),'g'); % from indirect optimization result
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Plot Converged Solution in Configuration Space %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -141,10 +66,6 @@ x_var_plot_fin = ZPlot_fin.x_var_plot;
 u_var_fin = ZPlot_fin.u_var;
 T_var_fin = ZPlot_fin.T_var;
 uT_var_fin = ZPlot_fin.uT_var;
-% X_tau1_fin = ZPlot_fin.X_tau1;
-% X_tau2_fin = ZPlot_fin.X_tau2;
-% X_alph1_fin = ZPlot_fin.X_alph1;
-% X_alph2_fin = ZPlot_fin.X_alph2;
 pos_bnd_dim_plot = ZPlot_fin.pos_bnd_dim_plot;
 vel_bnd_dim_plot = ZPlot_fin.vel_bnd_dim_plot;
 mass_bnd_dim_plot = ZPlot_fin.mass_bnd_dim_plot;
@@ -156,18 +77,6 @@ uT_var_fin_dim = ZPlot_fin.uT_var_dim;
 t_var_hist = ZPlot_fin.t_var_hist;
 T_var_hist = ZPlot_fin.T_var_hist;
 uT_var_hist = ZPlot_fin.uT_var_hist;
-
-% % Plot coast arcs
-% plot3(X_tau1_fin(:,1),X_tau1_fin(:,2),X_tau1_fin(:,3),':b','LineWidth',2) % orbit 1 coast arc
-% plot3(X_tau1_fin(end,1),X_tau1_fin(end,2),X_tau1_fin(end,3),'.b','MarkerSize',20) % end of orbit 1 coast arc
-% plot3(X_tau2_fin(:,1),X_tau2_fin(:,2),X_tau2_fin(:,3),':r','LineWidth',2) % orbit 2 coast arc
-% plot3(X_tau2_fin(end,1),X_tau2_fin(end,2),X_tau2_fin(end,3),'.r','MarkerSize',20) % end of orbit 2 coast arc
-
-% % Plot manifold arcs
-% plot3(X_alph1_fin(:,1),X_alph1_fin(:,2),X_alph1_fin(:,3),':c','LineWidth',2) % orbit 1 coast arc
-% plot3(X_alph1_fin(end,1),X_alph1_fin(end,2),X_alph1_fin(end,3),'.c','MarkerSize',20) % end of orbit 1 coast arc
-% plot3(X_alph2_fin(:,1),X_alph2_fin(:,2),X_alph2_fin(:,3),':m','LineWidth',2) % orbit 2 coast arc
-% plot3(X_alph2_fin(end,1),X_alph2_fin(end,2),X_alph2_fin(end,3),'.m','MarkerSize',20) % end of orbit 2 coast arc
 
 % % Plot boundary nodes
 % plot3(x_bnd_plot_fin(:,1).*l_ch,x_bnd_plot_fin(:,2).*l_ch,x_bnd_plot_fin(:,3).*l_ch,'+k','MarkerSize',8);
@@ -196,16 +105,28 @@ for ii = 1:colt.n_seg
     traj_TorC_i = traj_TorC{ii};
     
     % Determine whether thrust or coast arc and plot
+    scl = 100000;
+    nocst = true;
     if strcmp(traj_TorC_i,'T')
         h1 = plot3(x_traj_i(:,1).*l_ch,x_traj_i(:,2).*l_ch,x_traj_i(:,3).*l_ch,'r','LineWidth',1);
+%         ind_arrow = floor(size(x_traj_i,1)/2);
+%         quiver3(x_traj_i(ind_arrow,1).*l_ch,x_traj_i(ind_arrow,2).*l_ch,x_traj_i(ind_arrow,3).*l_ch,...
+%             x_traj_i(ind_arrow,4).*scl,x_traj_i(ind_arrow,5).*scl,x_traj_i(ind_arrow,6).*scl,'r')
     else
         h2 = plot3(x_traj_i(:,1).*l_ch,x_traj_i(:,2).*l_ch,x_traj_i(:,3).*l_ch,'b','LineWidth',1);
+%         ind_arrow = floor(size(x_traj_i,1)/2);
+%         quiver3(x_traj_i(ind_arrow,1).*l_ch,x_traj_i(ind_arrow,2).*l_ch,x_traj_i(ind_arrow,3).*l_ch,...
+%             x_traj_i(ind_arrow,4).*scl,x_traj_i(ind_arrow,5).*scl,x_traj_i(ind_arrow,6).*scl,'b') 
+        nocst = false;
     end
-    
 end
 
 % Add legend
-legend([h1 h2],{'Thrust','Coast'})
+if nocst
+    legend(h1,{'Thrust'})
+else
+    legend([h1 h2],{'Thrust','Coast'})
+end
 
 hold off
     
