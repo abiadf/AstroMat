@@ -52,9 +52,9 @@ colt.DiffType = 'Forward'; % finite difference method for numerical jacobian
 
 %%% Collocation Inputs %%%
 colt.N = 7; % degree of polynomials
-init_revs = 3; % total number of revs about initial orbit
+init_revs = 2.50; % total number of revs about initial orbit
 colt.n_seg_revi = 40; % number of segments for initial orbit revs
-fin_revs = 3; % total number of revs about final orbit
+fin_revs = 2.50; % total number of revs about final orbit
 colt.n_seg_revf = 40; % number of segments for final orbit revs
 colt.n_seg = colt.n_seg_revi+colt.n_seg_revf; % initial number of segments
 colt.n_state = 7; % number of state variables
@@ -132,6 +132,10 @@ T_trans_dim = T_trans*t_ch/86400;
 % Combine initial and final orbit IC into single vector
 colt.OrbIC = [X_init,T_init,X_fin,T_fin];
 
+% Save initial and final boundary nodes of initial guess
+colt.x0_des = [colt.OrbIC(1:6) 1];
+colt.xf_des = [colt.OrbIC(8:13) 1];
+
 % Save number of initial and final orbit revs used in initial guess
 colt.n_rev = [init_revs fin_revs];
 
@@ -148,66 +152,86 @@ colt.V_mono = V_mono; % save monodromy matrices in colt
 %% Discretize Initial Guess %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Discretize initial guess
-[Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = RevWrap_Discrt(colt);
+%-------------------------------------------------------------------------%
+% Orbit "Spooling" Method %
+%-------------------------------------------------------------------------%
 
-% Save initial and final boundary nodes of initial guess
-colt.x0_des = [colt.OrbIC(1:6) 1];
-colt.xf_des = [colt.OrbIC(8:13) 1];
+% % Discretize initial guess
+% [Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = RevWrap_Discrt(colt);
 
-% %%% Test Plot Setup %%%
-% figure(1)
-% hold on
-% grid on
-% axis equal
-% 
-% % Define initial view
-% % view(18,16)
-% view([-32,18])
-% % view(0,90)
-% 
-% % Plot Moon - realistic image, function from Bonnie Prado
-% bodyplot('Textures\','Moon',r_M,(1-mu).*l_ch,0,0,0.9,[1 0 0],0); % create 3D surface from sphere coordinates
-% 
-% % Plot Libration Points
-% plot3(L(1,1).*l_ch,L(1,2).*l_ch,L(1,3).*l_ch,'sk') % plot L1
-% plot3(L(2,1).*l_ch,L(2,2).*l_ch,L(2,3).*l_ch,'sk') % plot L2
-% 
-% % Add labels to plot
-% xlabel('X [km]')
-% ylabel('Y [km]')
-% zlabel('Z [km]')
-% 
-% % Plot Periodic Orbits
-% plot3(Xprop_init(:,1).*l_ch,Xprop_init(:,2).*l_ch,Xprop_init(:,3).*l_ch,':k','LineWidth',1); % initial halo orbit
-% % plot3(Xprop_init(1,1).*l_ch,Xprop_init(1,2).*l_ch,Xprop_init(1,3).*l_ch,'ok','MarkerSize',8); % initial halo orbit
-% plot3(Xprop_fin(:,1).*l_ch,Xprop_fin(:,2).*l_ch,Xprop_fin(:,3).*l_ch,':k','LineWidth',1); % final halo orbit
-% % plot3(Xprop_fin(1,1).*l_ch,Xprop_fin(1,2).*l_ch,Xprop_fin(1,3).*l_ch,'ok','MarkerSize',8); % final halo orbit
-% 
-% % % Plot full transfer 
-% plot3(xis_bnd(1,:).*l_ch,xis_bnd(2,:).*l_ch,xis_bnd(3,:).*l_ch,'+k','MarkerSize',8);
-% plot3(xis_plot(1,:).*l_ch,xis_plot(2,:).*l_ch,xis_plot(3,:).*l_ch,'.b','MarkerSize',8)
-% plot3(xis_plot(1,1).*l_ch,xis_plot(2,1).*l_ch,xis_plot(3,1).*l_ch,'.g','MarkerSize',12)
-% plot3(xis_plot(1,end).*l_ch,xis_plot(2,end).*l_ch,xis_plot(3,end).*l_ch,'.r','MarkerSize',12)
-% 
-% % % Plot trajectory as line with color gradient that is a function of time
-% % x = xis_plot(1,:).*l_ch;
-% % y = xis_plot(2,:).*l_ch;
-% % z = xis_plot(3,:).*l_ch;
-% % c = 1:numel(t_var); % # colors
-% % h = surface([x(:), x(:)], [y(:), y(:)], [z(:), z(:)], ...
-% %     [c(:), c(:)], 'EdgeColor','flat', 'FaceColor','none','linew',2);
-% % colormap( flipud(jet(numel(t_var))) )
+%-------------------------------------------------------------------------%
+% Load and Interpolate Previously Converged Solution %
+%-------------------------------------------------------------------------%
+
+% Define propagation times for each phase of the initial guess
+t_revi = init_revs*T_init;
+t_revf = fin_revs*T_fin;
+
+% colt.n_seg_revi = 41;
+% colt.n_seg_revf = 42;
+
+% Define boundary node times for each phase of the initial guess
+t_bnd_revi = linspace(0,t_revi,colt.n_seg_revi+1);
+t_bnd_revf = linspace(0,t_revf,colt.n_seg_revf+1);
+
+% Define time in terms of total transfer time for each phase of the initial guess
+TF_revi = t_revi; % total time after initial orbit revs
+
+% Define initial number of segments for desired solution
+n_seg_new = colt.n_seg; % number of segments defined in user inputs
+
+% Total t_bnd_vector
+t_bnd_new = [t_bnd_revi TF_revi+t_bnd_revf(2:end)]';
+
+% Load previously converged solution rather than use RevWrap Init. Guess
+load DRO2L1NRHO_NoOpt_rev2pt75_n80
+
+% Define final number of segments for previously converged solutions
+n_seg = colt.n_seg; % number of segments used in previously converged solution
+
+% Calculate constants
+[tau_nodes,~,~,~,~,~] = CollSetup(colt.N,colt.NodeSpace); % LG is interpolation method
+
+% Convert column vector of design variables to 3D matrices
+[~,~,uis,sis,~,l] = Z23D(Z,colt);
+
+% Interpolate to obtain new variable node states
+[Z_interp,t_var_new] = ZInterp(t_bnd,t_bnd_new,t_var,tau_nodes,...
+    C,uis,sis,n_seg,n_seg_new,colt);
+
+% Redefine interpolation results as initial guess for collocation method
+Z = Z_interp;
+t_bnd = t_bnd_new;
+t_var = t_var_new;
+
+% Update colt structure
+colt.n_seg = n_seg_new;
+
+% Compute constant collocation matrices necessary to compute constraints
+[collmat] = OptSetup(t_bnd,colt);
+
+% Extract necessary parameters from collmat stucture
+t_seg = collmat.t_seg;
+t_seg_d = collmat.t_seg_d;
+
+% Calculate constraint vector to obtain segment boundary nodes
+[F_test,x0,xf,C] = MakeF_LT(Z,t_seg,t_seg_d,collmat,colt);
+
+%Create vector of boundary nodes 
+x_bnd = cat(3,x0,xf(:,:,end));
+
+% Run plotting script
+run('Plot_Example_Direct_DRO2NRHO_EM')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Solve Collocation Problem before Direct Transcription %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
+[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z,t_bnd,t_var,colt);
 
 % Save or load collocation result
-save('DRO2L1NRHO_NoOpt_rev33_n80','Z','x_bnd','t_var','t_bnd','C','colt')
-% load DRO2L1NRHO_NoOpt_n80_N7
+save('DRO2L1NRHO_NoOpt_rev2pt5_n80','Z','x_bnd','t_var','t_bnd','C','colt')
+% load DRO2L1NRHO_NoOpt_rev33_n80
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Modify Collocation Output and Settings to Run Direct Transcription Algorithm %%
