@@ -6,4 +6,6 @@
 
 % Add folders of common function to the Matlab search path at startup
 addpath C:\Users\Robert\Documents\GitRepo_AstroMat\AstroMain
+addpath C:\Users\Robert\Documents\GitRepo_AstroMat\AstroMain\include
+addpath C:\Users\Robert\Documents\GitRepo_AstroMat\AstroMain\Textures
 addpath C:\Users\Robert\Documents\GitRepo_AstroMat\COLT

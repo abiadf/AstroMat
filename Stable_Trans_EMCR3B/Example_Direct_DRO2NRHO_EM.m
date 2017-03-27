@@ -33,7 +33,7 @@ colt.m0_dim = 500; % [kg] initial s/c mass
 % colt.Pmax_dim = 2000; % [W] maximum s/c power
 colt.Isp_dim = 2000; % [s] s/c specific impulse
 colt.ce_dim = colt.Isp_dim*colt.g0; % [m/s] s/c effective exhaust velocity
-colt.Tmax_dim = 0.1; % [N] maximum s/c thrust
+colt.Tmax_dim = 10.00; % [N] maximum s/c thrust
 colt.lambda_m0 = 1; % [nondimensional] initial guess for mass costate
 
 %%% Numerical Integration Options %%%
@@ -52,10 +52,10 @@ colt.DiffType = 'Forward'; % finite difference method for numerical jacobian
 
 %%% Collocation Inputs %%%
 colt.N = 7; % degree of polynomials
-init_revs = 2.50; % total number of revs about initial orbit
-colt.n_seg_revi = 40; % number of segments for initial orbit revs
-fin_revs = 2.50; % total number of revs about final orbit
-colt.n_seg_revf = 40; % number of segments for final orbit revs
+init_revs = 1.00; % total number of revs about initial orbit
+colt.n_seg_revi = 30; % number of segments for initial orbit revs
+fin_revs = 0.90; % total number of revs about final orbit
+colt.n_seg_revf = 30; % number of segments for final orbit revs
 colt.n_seg = colt.n_seg_revi+colt.n_seg_revf; % initial number of segments
 colt.n_state = 7; % number of state variables
 colt.n_cntrl = 4; % number of control variables
@@ -110,8 +110,8 @@ colt.Tmax = colt.Tmax_dim*(colt.t_ch^2/(1000*colt.l_ch*colt.m_ch)); % [nondimens
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Import L1 or L2 NRHO and DRO orbits selected for transfer
-load EM_L1NRHO_2_DRO
-% load EM_L2NRHO_2_DRO
+% load EM_L1NRHO_2_DRO
+load EM_L2NRHO_2_DRO
 
 % Reassign variables from imported data
 x0_nrho = x0_nrho_slct;
@@ -156,87 +156,90 @@ colt.V_mono = V_mono; % save monodromy matrices in colt
 % Orbit "Spooling" Method %
 %-------------------------------------------------------------------------%
 
-% % Discretize initial guess
-% [Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = RevWrap_Discrt(colt);
+% Discretize initial guess
+[Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = RevWrap_Discrt(colt);
 
 %-------------------------------------------------------------------------%
 % Load and Interpolate Previously Converged Solution %
 %-------------------------------------------------------------------------%
 
-% Define propagation times for each phase of the initial guess
-t_revi = init_revs*T_init;
-t_revf = fin_revs*T_fin;
-
-% colt.n_seg_revi = 41;
-% colt.n_seg_revf = 42;
-
-% Define boundary node times for each phase of the initial guess
-t_bnd_revi = linspace(0,t_revi,colt.n_seg_revi+1);
-t_bnd_revf = linspace(0,t_revf,colt.n_seg_revf+1);
-
-% Define time in terms of total transfer time for each phase of the initial guess
-TF_revi = t_revi; % total time after initial orbit revs
-
-% Define initial number of segments for desired solution
-n_seg_new = colt.n_seg; % number of segments defined in user inputs
-
-% Total t_bnd_vector
-t_bnd_new = [t_bnd_revi TF_revi+t_bnd_revf(2:end)]';
-
-% Load previously converged solution rather than use RevWrap Init. Guess
-load DRO2L1NRHO_NoOpt_rev2pt75_n80
-
-% Define final number of segments for previously converged solutions
-n_seg = colt.n_seg; % number of segments used in previously converged solution
-
-% Calculate constants
-[tau_nodes,~,~,~,~,~] = CollSetup(colt.N,colt.NodeSpace); % LG is interpolation method
-
-% Convert column vector of design variables to 3D matrices
-[~,~,uis,sis,~,l] = Z23D(Z,colt);
-
-% Interpolate to obtain new variable node states
-[Z_interp,t_var_new] = ZInterp(t_bnd,t_bnd_new,t_var,tau_nodes,...
-    C,uis,sis,n_seg,n_seg_new,colt);
-
-% Redefine interpolation results as initial guess for collocation method
-Z = Z_interp;
-t_bnd = t_bnd_new;
-t_var = t_var_new;
-
-% Update colt structure
-colt.n_seg = n_seg_new;
-
-% Compute constant collocation matrices necessary to compute constraints
-[collmat] = OptSetup(t_bnd,colt);
-
-% Extract necessary parameters from collmat stucture
-t_seg = collmat.t_seg;
-t_seg_d = collmat.t_seg_d;
-
-% Calculate constraint vector to obtain segment boundary nodes
-[F_test,x0,xf,C] = MakeF_LT(Z,t_seg,t_seg_d,collmat,colt);
-
-%Create vector of boundary nodes 
-x_bnd = cat(3,x0,xf(:,:,end));
-
-% Run plotting script
-run('Plot_Example_Direct_DRO2NRHO_EM')
+% % Define propagation times for each phase of the initial guess
+% t_revi = init_revs*T_init;
+% t_revf = fin_revs*T_fin;
+% 
+% % colt.n_seg_revi = 41;
+% % colt.n_seg_revf = 42;
+% 
+% % Define boundary node times for each phase of the initial guess
+% t_bnd_revi = linspace(0,t_revi,colt.n_seg_revi+1);
+% t_bnd_revf = linspace(0,t_revf,colt.n_seg_revf+1);
+% 
+% % Define time in terms of total transfer time for each phase of the initial guess
+% TF_revi = t_revi; % total time after initial orbit revs
+% 
+% % Define initial number of segments for desired solution
+% n_seg_new = colt.n_seg; % number of segments defined in user inputs
+% 
+% % Total t_bnd_vector
+% t_bnd_new = [t_bnd_revi TF_revi+t_bnd_revf(2:end)]';
+% 
+% % Load previously converged solution rather than use RevWrap Init. Guess
+% load DRO2L1NRHO_NoOpt_rev2pt75_n80
+% 
+% % Run plotting script
+% run('Plot_Example_Direct_DRO2NRHO_EM')
+% 
+% % Define final number of segments for previously converged solutions
+% n_seg = colt.n_seg; % number of segments used in previously converged solution
+% 
+% % Calculate constants
+% [tau_nodes,~,~,~,~,~] = CollSetup(colt.N,colt.NodeSpace); % LG is interpolation method
+% 
+% % Convert column vector of design variables to 3D matrices
+% [~,~,uis,sis,~,l] = Z23D(Z,colt);
+% 
+% % Interpolate to obtain new variable node states
+% [Z_interp,t_var_new] = ZInterp(t_bnd,t_bnd_new,t_var,tau_nodes,...
+%     C,uis,sis,n_seg,n_seg_new,colt);
+% 
+% % Redefine interpolation results as initial guess for collocation method
+% Z = Z_interp;
+% t_bnd = t_bnd_new;
+% t_var = t_var_new;
+% 
+% % Update colt structure
+% colt.n_seg = n_seg_new;
+% 
+% % Compute constant collocation matrices necessary to compute constraints
+% [collmat] = OptSetup(t_bnd,colt);
+% 
+% % Extract necessary parameters from collmat stucture
+% t_seg = collmat.t_seg;
+% t_seg_d = collmat.t_seg_d;
+% 
+% % Calculate constraint vector to obtain segment boundary nodes
+% [F_test,x0,xf,C] = MakeF_LT(Z,t_seg,t_seg_d,collmat,colt);
+% 
+% %Create vector of boundary nodes 
+% x_bnd = cat(3,x0,xf(:,:,end));
+% 
+% % Run plotting script
+% run('Plot_Example_Direct_DRO2NRHO_EM')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Solve Collocation Problem before Direct Transcription %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z,t_bnd,t_var,colt);
+[Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load collocation result
-save('DRO2L1NRHO_NoOpt_rev2pt5_n80','Z','x_bnd','t_var','t_bnd','C','colt')
+% save('DRO2L1NRHO_NoOpt_rev2pt5_n80','Z','x_bnd','t_var','t_bnd','C','colt')
 % load DRO2L1NRHO_NoOpt_rev33_n80
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Modify Collocation Output and Settings to Run Direct Transcription Algorithm %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+% 
 % % % If skipping initial collocation step then define Z=Z0
 % % Z = Z0;
 % 
@@ -287,7 +290,7 @@ save('DRO2L1NRHO_NoOpt_rev2pt5_n80','Z','x_bnd','t_var','t_bnd','C','colt')
 % % colt.OptMeth = 'NoOpt'; % no optimization method used
 % colt.OptMeth = 'fmincon'; % fmincon optimization method used
 % % colt.OptMeth = 'IPOPT'; % IPOPT optimization method used
- 
+%  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Run Direct Transcription Algorithm %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -295,7 +298,7 @@ save('DRO2L1NRHO_NoOpt_rev2pt5_n80','Z','x_bnd','t_var','t_bnd','C','colt')
 % [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load direct transcription result
-% save('DRO2L1NRHO_OptTrans_n80_N7','Z','x_bnd','t_var','t_bnd','C','colt')
+% save('DRO2L2NRHO_OptwColl_revpt75n1_Tmax1_n60','Z','x_bnd','t_var','t_bnd','C','colt')
 % load DRO2L1NRHO_OptTrans_n80_N7
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

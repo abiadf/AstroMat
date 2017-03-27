@@ -20,10 +20,10 @@ axis equal
 
 % Define initial view
 % view(18,16)
-% view([-32,18])
+view([-32,18])
 % view(0,90) % XY Plane View
 % view(0,0) % XZ View
-view(90,0) % YZ Plane View
+% view(90,0) % YZ Plane View
 
 % Plot Moon - realistic image, function from Bonnie Prado
 bodyplot('Textures\','Moon',r_M,(1-mu).*l_ch,0,0,0.9,[1 0 0],0); % create 3D surface from sphere coordinates
@@ -97,6 +97,9 @@ x_traj = ZPlot_fin.x_traj;
 t_traj = ZPlot_fin.t_traj;
 traj_TorC = ZPlot_fin.traj_TorC;
 
+% Define logical variable indicating whether coast period occurs
+nocst = true;
+
 for ii = 1:colt.n_seg
     
     % Extract data for current trajectory segment
@@ -105,12 +108,11 @@ for ii = 1:colt.n_seg
     
     % Determine whether thrust or coast arc and plot
     scl = 100000;
-    nocst = true;
     if strcmp(traj_TorC_i,'T')
         h1 = plot3(x_traj_i(:,1).*l_ch,x_traj_i(:,2).*l_ch,x_traj_i(:,3).*l_ch,'r','LineWidth',1);
-%         ind_arrow = floor(size(x_traj_i,1)/2);
-%         quiver3(x_traj_i(ind_arrow,1).*l_ch,x_traj_i(ind_arrow,2).*l_ch,x_traj_i(ind_arrow,3).*l_ch,...
-%             x_traj_i(ind_arrow,4).*scl,x_traj_i(ind_arrow,5).*scl,x_traj_i(ind_arrow,6).*scl,'r')
+        ind_arrow = floor(size(x_traj_i,1)/2);
+        quiver3(x_traj_i(ind_arrow,1).*l_ch,x_traj_i(ind_arrow,2).*l_ch,x_traj_i(ind_arrow,3).*l_ch,...
+            x_traj_i(ind_arrow,4).*scl,x_traj_i(ind_arrow,5).*scl,x_traj_i(ind_arrow,6).*scl,'r')
     else
         h2 = plot3(x_traj_i(:,1).*l_ch,x_traj_i(:,2).*l_ch,x_traj_i(:,3).*l_ch,'b','LineWidth',1);
 %         ind_arrow = floor(size(x_traj_i,1)/2);
@@ -148,6 +150,11 @@ xlabel('Time [days]')
 ylabel('Thrust [N]')
 hold off
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Calculate Approximate "Delta-V" Associated with Transfer %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+deltV_approx = colt.ce_dim*log(mass_bnd_dim_plot(1)/mass_bnd_dim_plot(end)); % [m/s]
 
 
 

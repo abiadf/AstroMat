@@ -40,6 +40,7 @@ OrbIC = colt.OrbIC;
 n_rev = colt.n_rev;
 n_seg_revi = colt.n_seg_revi;
 n_seg_revf = colt.n_seg_revi;
+% n_seg = n_seg_revi + n_seg_revi;
 
 % Extract initial and final orbit IC
 X_init = OrbIC(1:6);
