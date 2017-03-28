@@ -264,7 +264,7 @@ colt.OptMeth = 'fmincon'; % fmincon optimization method used
 [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z0,t_bnd,t_var,colt);
 
 % Save or load direct transcription result
-save('L2LTrans_OptResult_wColl_wBnd_v2','Z','x_bnd','t_var','t_bnd','C','colt')
+% save('L2LTrans_OptResult_wColl_wBnd_v2','Z','x_bnd','t_var','t_bnd','C','colt')
 % load('L2LTrans_OptResult_wColl_wBnd_v2.mat')
 % load('L2LTrans_OptResult_NoColl_wBnd_v2.mat')
 % load('L2LTrans_OptResult_NoColl_v2.mat')

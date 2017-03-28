@@ -31,9 +31,7 @@ function [Z,x_bnd,t_var,t_bnd,C,n_seg,maxe,colt] = Coll_deBoor(Z,t_bnd,t_var,hea
 % Extract necessary parameters from colt stucture
 N = colt.N;
 n_seg = colt.n_seg;
-n_cntrl = colt.n_cntrl;
 n_state = colt.n_state;
-n_slack = colt.n_slack;
 n_coast = colt.n_coast;
 ctol = colt.ctol;
 Dec = colt.Dec;
@@ -72,7 +70,7 @@ while colt.maxe > ctol % error reduction loop
         [Z,x_bnd,tau_nodes,C,newti] = CollSolve_LT(Z,t_bnd,header,colt,newti);
         
         % Convert column vector of design variables into 3D matrices
-        [zis,xis,uis,sis,coast_times,l] = Z23D(Z,colt);
+        [~,~,uis,sis,~,~] = Z23D(Z,colt);
 
         % Iterate distribution loop iteration counter
         colt.mini = colt.mini + 1;
@@ -152,7 +150,7 @@ while colt.maxe > ctol % error reduction loop
         [Z,x_bnd,tau_nodes,C,newti] = CollSolve_LT(Z,t_bnd,header,colt,newti);
 
         % Convert column vector of design variables into 3D matrices
-        [zis,xis,uis,sis,coast_times,l] = Z23D(Z,colt);
+        [~,~,uis,sis,~,~] = Z23D(Z,colt);
         
         %Apply deBoor error equidistribution method
         [~,I,xi] = deBoor(t_bnd,C,N,n_state,n_seg);

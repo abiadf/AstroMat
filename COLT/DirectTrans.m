@@ -1,4 +1,4 @@
-function [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans_InEq(Z,t_bnd,t_var,colt)
+function [Z,x_bnd,t_var,t_bnd,C,colt] = DirectTrans(Z,t_bnd,t_var,colt)
 % function [Z,x_bnd,t_var,t_bnd,C] = DirectTrans(Z,t_bnd,t_var,colt)
 %
 % This function executes direct transcription with collocation. User inputs
@@ -65,7 +65,14 @@ switch OptMeth % Select case based on desired optimization method
     end
     
     case 'fmincon' % Optimization performed with Matlab's fmincon function
-    
+        
+        % Define optimization method options
+        colt.options_opt = optimoptions('fmincon','Algorithm','interior-point',...
+            'CheckGradients',false,'Display','iter-detailed',...
+            'MaxFunctionEvaluations',opt_max_fevals,'MaxIterations',opt_max_iter,...
+            'SpecifyConstraintGradient',true,'SpecifyObjectiveGradient',true,...
+            'UseParallel',false);     
+        
     %---------------------------------------------------------------------%
     % Select Mesh Refinement Method %
     %---------------------------------------------------------------------%
@@ -76,31 +83,27 @@ switch OptMeth % Select case based on desired optimization method
                 
                 % Calculate sparsity pattern of the Jacobian and Hessian matrices
                 [collmat] = OptSetup(t_bnd,colt);
-                
-                % Define optimization method options
-                options_opt = optimoptions('fmincon','Algorithm','interior-point',...
-                    'CheckGradients',false,'Display','iter-detailed',...
-                    'MaxFunctionEvaluations',opt_max_fevals,'MaxIterations',opt_max_iter,...
-                    'SpecifyConstraintGradient',true,'SpecifyObjectiveGradient',true);
                  
                 % Run fmincon algorithm
                 [Z,fval,exitflag,output,lambda,grad,Hoff] = ...
                     fmincon(@(Z) DrctTrans_Obj_MaxMf(Z,t_bnd,colt,collmat),Z,...
                     [],[],[],[],colt.lb_Z,colt.ub_Z,...
-                    @(Z) DrctTrans_Con(Z,t_bnd,colt,collmat),options_opt);
+                    @(Z) DrctTrans_Con(Z,t_bnd,colt,collmat),colt.options_opt);
                 
                 % Process fmincon output
                 newti = 0; % initialize Newton's method iteration counter
-                [x_bnd,~,C,~,colt] = post_fmincon(Z,t_bnd,output,newti,colt);
+                [x_bnd,~,C,~,colt] = PostOpt(Z,t_bnd,output,newti,colt);
 
             case 'deBoor' % optimzation with de Boor mesh refinement
                 
-                [Z,x_bnd,t_var,t_bnd,C,~,~] = Opt_Coll_deBoor(Z,t_bnd,t_var,colt);
-        
-            case 'CEP'
+                % Run fmincon algorithm with de Boor mesh refinement
+                [Z,x_bnd,t_var,t_bnd,C,colt] = OptColl_deBoor(Z,t_bnd,t_var,colt);
             
-            % To be coded at a later date
-        
+            case 'CEP'
+                
+                % Run fmincon algorithm with CEP mesh refinement
+                [Z,x_bnd,t_var,t_bnd,C,colt] = OptColl_CEP(Z,t_bnd,t_var,colt);
+                        
         end
         
     case 'IPOPT' % Optimization 

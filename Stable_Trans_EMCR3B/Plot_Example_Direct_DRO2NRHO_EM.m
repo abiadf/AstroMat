@@ -25,6 +25,9 @@ view([-32,18])
 % view(0,0) % XZ View
 % view(90,0) % YZ Plane View
 
+% Plot Earth - realistic image, function from Bonnie Prado
+bodyplot('Textures\','Earth',r_E,-mu.*l_ch,0,0,0.9,[1 0 0],0); % create 3D surface from sphere coordinates
+
 % Plot Moon - realistic image, function from Bonnie Prado
 bodyplot('Textures\','Moon',r_M,(1-mu).*l_ch,0,0,0.9,[1 0 0],0); % create 3D surface from sphere coordinates
 
@@ -97,8 +100,9 @@ x_traj = ZPlot_fin.x_traj;
 t_traj = ZPlot_fin.t_traj;
 traj_TorC = ZPlot_fin.traj_TorC;
 
-% Define logical variable indicating whether coast period occurs
+% Define logical variable indicating whether coast or thrust period occurs
 nocst = true;
+nothrst = true;
 
 for ii = 1:colt.n_seg
     
@@ -113,6 +117,7 @@ for ii = 1:colt.n_seg
         ind_arrow = floor(size(x_traj_i,1)/2);
         quiver3(x_traj_i(ind_arrow,1).*l_ch,x_traj_i(ind_arrow,2).*l_ch,x_traj_i(ind_arrow,3).*l_ch,...
             x_traj_i(ind_arrow,4).*scl,x_traj_i(ind_arrow,5).*scl,x_traj_i(ind_arrow,6).*scl,'r')
+        nothrst = false;
     else
         h2 = plot3(x_traj_i(:,1).*l_ch,x_traj_i(:,2).*l_ch,x_traj_i(:,3).*l_ch,'b','LineWidth',1);
 %         ind_arrow = floor(size(x_traj_i,1)/2);
@@ -125,6 +130,8 @@ end
 % Add legend
 if nocst
     legend(h1,{'Thrust'})
+elseif nothrst
+    legend(h2,{'Coast'})
 else
     legend([h1 h2],{'Thrust','Coast'})
 end
@@ -156,5 +163,13 @@ hold off
 
 deltV_approx = colt.ce_dim*log(mass_bnd_dim_plot(1)/mass_bnd_dim_plot(end)); % [m/s]
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Package Data for Export to Other Users %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Rename variables for export
+X_ppt = x_bnd_plot_fin;
+T_ppt = t_bnd;
 
+% save('DRO2L1NRHO_OptwColl_rev11_Tmax10_n60_Export_BndPts','mu','X_init',...
+%     'T_init','X_fin','T_fin','X_ppt','T_ppt')

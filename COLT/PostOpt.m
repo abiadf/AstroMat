@@ -1,5 +1,5 @@
-function [x_bnd,tau_nodes,C,newti,colt] = post_fmincon(Z,t_bnd,output,newti,colt)
-% function [x_bnd,tau_nodes,C,newti,colt] = post_fmincon(Z,t_bnd,output,newti)
+function [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt)
+% function [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti)
 % 
 % This script uses fmincon output to calculate variables needed for the
 % collocation and mesh refinement process. It is intended to be run
@@ -33,9 +33,6 @@ NodeSpace = colt.NodeSpace;
 N = colt.N;
 n_seg = colt.n_seg;
 n_state = colt.n_state;
-n_cntrl = colt.n_cntrl;
-n_slack = colt.n_slack;
-n_coast = colt.n_coast;
 ce = colt.ce;
 mu = colt.mu;
     
@@ -70,7 +67,7 @@ newti = newti + output.iterations; % number of fmincon iterations; NOT Newton's 
 %-------------------------------------------------------------------------%
 
 % Convert column vector of design variables to 3D matrices
-[zis,xis,uis,sis,coast_times,l] = Z23D(Z,colt);
+[~,xis,uis,~,~,~] = Z23D(Z,colt);
 
 %-------------------------------------------------------------------------%
 % Calculate Polynomial Coefficients %

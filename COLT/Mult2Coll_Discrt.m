@@ -1,5 +1,5 @@
-function [Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = RevWrap_Discrt(colt)
-% function [Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = RevWrap_Discrt(colt)
+function [Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = Mult2Coll_Discrt(x_ppt,t_ppt,colt)
+% function [Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = Mult2Coll_Discrt(x_ppt,t_ppt,colt)
 %
 % This function discretizes an initial guess for a low-thrust transfer 
 % trajectory into boundary and variable nodes such that the trajectory can 
@@ -30,17 +30,13 @@ function [Z0,t_var,t_bnd,xis_bnd,xis_plot,uis_plot] = RevWrap_Discrt(colt)
 % Extract necessary parameters from colt stucture
 NodeSpace = colt.NodeSpace;
 N = colt.N;
-% n_seg = colt.n_seg;
+n_seg = colt.n_seg;
 n_cntrl = colt.n_cntrl;
 n_state = colt.n_state;
 n_slack = colt.n_slack;
 m0 = colt.m0;
 mu = colt.mu;
 OrbIC = colt.OrbIC;
-n_rev = colt.n_rev;
-n_seg_revi = colt.n_seg_revi;
-n_seg_revf = colt.n_seg_revf;
-n_seg = n_seg_revi + n_seg_revf;
 
 % Extract initial and final orbit IC
 X_init = OrbIC(1:6);
@@ -48,54 +44,64 @@ T_init = OrbIC(7);
 X_fin = OrbIC(8:13);
 T_fin = OrbIC(14);
 
-% Extract number of revs to propagate for initial and final orbits
-n_revi = n_rev(1);
-n_revf = n_rev(2);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Calculate Boundary and Variable Node Times %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Define propagation times for each phase of the initial guess
-t_revi = n_revi*T_init;
-t_revf = n_revf*T_fin;
-
 %%% Boundary Nodes %%%
 
 % Define boundary node times for each phase of the initial guess
-t_bnd_revi = linspace(0,t_revi,n_seg_revi+1);
-t_bnd_revf = linspace(0,t_revf,n_seg_revf+1);
+% t_bnd = linspace(0,t_ppt(end),n_seg+1);
+t_bnd = t_ppt;
 
-% Define time in terms of total transfer time for each phase of the initial guess
-TF_revi = t_revi; % total time after initial orbit revs
-TF_revf = TF_revi + t_revf; % total time after final orbit revs
+% Calculate segment timespans
+t_seg = diff(t_bnd);
 
 %%% Variable Nodes %%%
 
 % Calculate nondimensional normalized time for each segment
 [tau_nodes,~,~,~,~] = CollSetup(N,NodeSpace); % LG is interpolation method
 
-% Compute all variable node dimensional times
-[t_var_revi] = CollVarTimes(t_bnd_revi,N,n_seg_revi,tau_nodes,NodeSpace,0);
-[t_var_revf] = CollVarTimes(t_bnd_revf,N,n_seg_revf,tau_nodes,NodeSpace,0);
+% Preallocate t_var_vec matrix
+t_var_vec = zeros((N+1)/2,1,n_seg);
+
+for ii = 1:n_seg
+    
+    % Define time span for current segment
+    t_bnd_i = [0 t_seg(ii)];
+    n_seg_i = 1;
+
+    % Compute all variable node dimensional times
+    [t_var_i] = CollVarTimes(t_bnd_i,N,n_seg_i,tau_nodes,NodeSpace,0);
+    
+    % Store variable node times in 3D matrix
+    t_var_vec(:,:,ii) = t_var_i; 
+
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Propagate Initial and Final Orbit Extra Revolutions %%
+%% Propagate to Obtain Variable Node States %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Propagate to obtain boundary nodes states of initial orbit revolutions
-[X_revi_bnd,~] = GslInteg_CR3BP(X_init,t_bnd_revi,mu);
+% Preallocate t_var_vec matrix
+x_var_vec = zeros(6,(N+1)/2,n_seg);
 
-% Propagate to obtain boundary node states of final orbit revolutions
-[X_revf_bnd,~] = GslInteg_CR3BP(X_fin,t_bnd_revf,mu);
+% Calculate states at variable node times
+for ii = 1:n_seg
+    
+    % Select variable node times for current segment
+    t_var_i = t_var_vec(:,:,ii);
+    
+    % Select initial states for current segment
+    x0_seg = x_ppt(ii,:);
+    
+    % Propagate to obtain boundary nodes states of initial orbit revolutions
+    [x_var_i,~] = GslInteg_CR3BP(x0_seg,[0 t_var_i'],mu);
+    
+    % Store variable node states in 3D matrix
+    x_var_vec(:,:,ii) = x_var_i(2:end,:)';
 
-% Propagate to obtain variable node states of initial orbit revolutions
-[X_revi_var,~] = GslInteg_CR3BP(X_init,[0 t_var_revi'],mu);
-X_revi_var = X_revi_var(2:end,:); % t=0 not variable node so remove states
-
-% Propagate to obtain variable node states of final orbit revolutions
-[X_revf_var,~] = GslInteg_CR3BP(X_fin,[0 t_var_revf'],mu);
-X_revf_var = X_revf_var(2:end,:); % t=0 not variable node so remove states
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Assemble Discretized Coast Arc Outputs %%
@@ -115,52 +121,12 @@ beta_Thi = sqrt(0.1); % chosen such that slack variable constraint initially equ
 S = [beta_Tlow beta_Thi]';
 
 % Set control and slack values for extra periodic orbit revolutions
-uis_var_revi = repmat(U,[1 1 n_seg_revi]);
-uis_var_revf = repmat(U,[1 1 n_seg_revf]);
-sis_var_revi = repmat(S,[1 1 n_seg_revi]);
-sis_var_revf = repmat(S,[1 1 n_seg_revf]);
+uis_var = repmat(U,[1 1 n_seg]);
+sis_var = repmat(S,[1 1 n_seg]);
 
 % Add mass state to state values for extra periodic orbit revolutions
-X_revi_bnd = [X_revi_bnd(:,1:6) m0.*ones(n_seg_revi+1,1)];
-X_revf_bnd = [X_revf_bnd(:,1:6) mf.*ones(n_seg_revf+1,1)];
-X_revi_var = [X_revi_var(:,1:6) m0.*ones((N+1)/2*n_seg_revi,1)];
-X_revf_var = [X_revf_var(:,1:6) mf.*ones((N+1)/2*n_seg_revf,1)];
-
-% Reshape vectors of state values at boundary nodes
-xis_bnd_revi = reshape(X_revi_bnd',[n_state n_seg_revi+1]);
-xis_bnd_revf = reshape(X_revf_bnd',[n_state n_seg_revf+1]);
-
-% Reshape vector of state values at variable nodes along initial periodic orbit extra revolution
-xis_var_revi = zeros(n_state,(N+1)/2,n_seg_revi);
-ind = 1;
-for ii = 1:n_seg_revi
-    xis_var_revi(:,:,ii) = X_revi_var(ind:ind+(N-1)/2,:)';
-    ind = ind + (N+1)/2;
-end
-
-% Reshape vector of state values at variable nodes along final periodic orbit extra revolution
-xis_var_revf = zeros(n_state,(N+1)/2,n_seg_revf);
-ind = 1;
-for ii = 1:n_seg_revf
-    xis_var_revf(:,:,ii) = X_revf_var(ind:ind+(N-1)/2,:)';
-    ind = ind + (N+1)/2;
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Assemble Full Discretized Lyapunov to Lyapunov Transfer %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Combine state matrices for boundary nodes into single matrix
-xis_bnd = cat(2,xis_bnd_revi,xis_bnd_revf(:,2:end));
-
-% Combine state matrices into single matrix
-xis_var_TF = cat(3,xis_var_revi,xis_var_revf);
-
-% Combine control matrices into single matrix
-uis_var_TF = cat(3,uis_var_revi,uis_var_revf);
-
-% Combine slack variable matrices into single matrix
-sis_var_TF = cat(3,sis_var_revi,sis_var_revf);
+xis_bnd = [x_ppt(:,1:6) m0.*ones(n_seg+1,1)]';
+xis_var = cat(1,x_var_vec, m0.*ones(1,(N+1)/2,n_seg));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Assemble Design Variable Vector and Plotting Variables %%
@@ -175,9 +141,9 @@ ind = 1; % initialize index counter for xis_plot and uis_plot
 for ii = 1:n_seg
     
     % Define state, control, and slack variable for current segment
-    xis_var_i = xis_var_TF(:,:,ii);
-    uis_var_i = uis_var_TF(:,:,ii);
-    sis_var_i = sis_var_TF(:,:,ii);
+    xis_var_i = xis_var(:,:,ii);
+    uis_var_i = uis_var(:,:,ii);
+    sis_var_i = sis_var(:,:,ii);
     
     % Formulate single column for Z_mat
     x_col = reshape(xis_var_i,[n_state*(N+1)/2 1]);
@@ -197,8 +163,6 @@ Z0 = reshape(Z_mat,[l*n_seg 1]);
 %% Shift Variable Node Times %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Total t_bnd_vector
-t_bnd = [t_bnd_revi TF_revi+t_bnd_revf(2:end)]';
-
-% Total t_var vector
-t_var = [t_var_revi; TF_revi+t_var_revf];
+t_bnd_vec = repmat(reshape(t_bnd,[1 1 n_seg+1]),[(N+1)/2 1 1]);
+t_var_shift = t_var_vec + t_bnd_vec(:,:,1:n_seg);
+t_var = reshape(t_var_shift,[n_seg*(N+1)/2 1]);
