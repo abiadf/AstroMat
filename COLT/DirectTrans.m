@@ -47,8 +47,8 @@ switch OptMeth % Select case based on desired optimization method
             
             % Collocation no mesh refinement
             header = 'On'; % turn on iteration prinout
-            newti = 0; % initialize Newton's method iteration counter
-            [Z,x_bnd,~,C,~] = CollSolve_LT(Z,t_bnd,header,colt,newti);
+            colt.newti = 0; % initialize Newton's method iteration counter
+            [Z,x_bnd,~,C,colt] = CollSolve_LT(Z,t_bnd,header,colt);
    
         case 'deBoor' % de Boor mesh refinement method
             
@@ -60,7 +60,7 @@ switch OptMeth % Select case based on desired optimization method
             
             % Collocation with Control Explicit Propagation
             header = 'On'; % turn on iteration prinout
-            [Z,x_bnd,t_var,t_bnd,C,~,~,colt] = Coll_CEP(Z,t_bnd,t_var,header,colt);  
+            [Z,x_bnd,t_var,t_bnd,C,colt] = Coll_CEP(Z,t_bnd,t_var,header,colt);  
              
     end
     
@@ -91,8 +91,8 @@ switch OptMeth % Select case based on desired optimization method
                     @(Z) DrctTrans_Con(Z,t_bnd,colt,collmat),colt.options_opt);
                 
                 % Process fmincon output
-                newti = 0; % initialize Newton's method iteration counter
-                [x_bnd,~,C,~,colt] = PostOpt(Z,t_bnd,output,newti,colt);
+                colt.newti = 0; % initialize Newton's method iteration counter
+                [x_bnd,~,C,colt] = PostOpt(Z,t_bnd,output,colt);
 
             case 'deBoor' % optimzation with de Boor mesh refinement
                 

@@ -16,7 +16,7 @@ function [Z,x_bnd,t_var,t_bnd,C,colt] = OptColl_CEP(Z,t_bnd,t_var,colt)
 %    t_var    non-normalized times at  final variable nodes (n_seg*(N+1)/2 x 1)
 %    t_bnd    non-normalized times at  final boundary nodes (n_seg x 1)
 %    C        matrix of polynomial coefficients (l x (N+1) x n_seg)
-%    colt      structure containing collocation and optimization parameters      
+%    colt     structure containing collocation and optimization parameters      
 %
 % Written by R. Pritchett, 10/20/16
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -35,7 +35,7 @@ colt.remi = 1; %initialize major while loop counter
 colt.addi = 1; % initialize max error
 colt.maxdiffe = 'N/A'; % no error distribution value for CEP mesh refinement
 colt.maxe = 1; % initialize max error
-newti = 0; % initialize Newton's method iteration counter
+colt.newti = 0; % initialize Newton's method iteration counter
 
 % Initialize matrix of lower and upper bounds on design variables in single segment 
 lb_i = [0;-Inf.*ones(3,1); -Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
@@ -51,20 +51,20 @@ while n_seg_new < n_seg_old
     [collmat] = OptSetup(t_bnd,colt);
 
     % Run fmincon algorithm
-    [Z,~,~,output,~,~,~] = ...
+    [Z,~,~,output,lambda,~,~] = ...
         fmincon(@(Z) DrctTrans_Obj_MaxMf(Z,t_bnd,colt,collmat),Z,...
         [],[],[],[],colt.lb_Z,colt.ub_Z,...
         @(Z) DrctTrans_Con(Z,t_bnd,colt,collmat),options_opt);
 
     % Process fmincon output
-    [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt);
-    
+    [x_bnd,tau_nodes,C,colt] = PostOpt(Z,t_bnd,output,colt);
+       
     % Print output for one iteration of CEP mesh refinement
     Zl = length(Z); % calculate length of design variable vector
     Fl = length(lambda.eqnonlin); % calculate length of constraint vector 
-    error = output.constrviolation; % extract error from fmincon output
+    error = colt.fmincon_out.constrviolation; % extract error from fmincon output
     fprintf(' Deg  Segs  len(X)  len(F)     max(|F|)     Iter   Rem   Add    max(|error|) \n')
-    fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e \n',N,n_seg,Zl,Fl,error,newti,colt.remi,colt.addi,colt.maxe)
+    fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e \n',colt.N,colt.n_seg,Zl,Fl,error,colt.newti,colt.remi,colt.addi,colt.maxe)
     
     % Convert column vector of design variables into 3D matrices
     [~,~,uis,sis,~,l] = Z23D(Z,colt);
@@ -106,20 +106,20 @@ n_seg_old = n_seg_new-1; % adjust segment count in order to enter next loop
 [collmat] = OptSetup(t_bnd,colt);
 
 % Run fmincon algorithm
-[Z,~,~,output,~,~,~] = ...
+[Z,~,~,output,lambda,~,~] = ...
     fmincon(@(Z) DrctTrans_Obj_MaxMf(Z,t_bnd,colt,collmat),Z,...
     [],[],[],[],colt.lb_Z,colt.ub_Z,...
     @(Z) DrctTrans_Con(Z,t_bnd,colt,collmat),options_opt);
 
 % Process fmincon output
-[x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt);
+[x_bnd,tau_nodes,C,colt] = PostOpt(Z,t_bnd,output,colt);
 
 % Print output for one iteration of CEP mesh refinement
 Zl = length(Z); % calculate length of design variable vector
 Fl = length(lambda.eqnonlin); % calculate length of constraint vector 
 error = output.constrviolation; % extract error from fmincon output
 fprintf(' Deg  Segs  len(X)  len(F)     max(|F|)     Iter   Rem   Add    max(|error|) \n')
-fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e \n',N,n_seg,Zl,Fl,error,newti,colt.remi,colt.addi,colt.maxe)
+fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e \n',colt.N,colt.n_seg,Zl,Fl,error,colt.newti,colt.remi,colt.addi,colt.maxe)
 
 %Convert column vector of design variables into 3D matrices
 [~,~,uis,sis,~,l] = Z23D(Z,colt);
@@ -163,20 +163,20 @@ while n_seg_new > n_seg_old
     [collmat] = OptSetup(t_bnd,colt);
 
     % Run fmincon algorithm
-    [Z,~,~,output,~,~,~] = ...
+    [Z,~,~,output,lambda,~,~] = ...
         fmincon(@(Z) DrctTrans_Obj_MaxMf(Z,t_bnd,colt,collmat),Z,...
         [],[],[],[],colt.lb_Z,colt.ub_Z,...
         @(Z) DrctTrans_Con(Z,t_bnd,colt,collmat),options_opt);
 
     % Process fmincon output
-    [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt);
+    [x_bnd,tau_nodes,C,colt] = PostOpt(Z,t_bnd,output,colt);
     
     % Print output for one iteration of CEP mesh refinement
     Zl = length(Z); % calculate length of design variable vector
     Fl = length(lambda.eqnonlin); % calculate length of constraint vector 
     error = output.constrviolation; % extract error from fmincon output
     fprintf(' Deg  Segs  len(X)  len(F)     max(|F|)     Iter   Rem   Add    max(|error|) \n')
-    fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e \n',N,n_seg,Zl,Fl,error,newti,colt.remi,colt.addi,colt.maxe)
+    fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e \n',colt.N,colt.n_seg,Zl,Fl,error,colt.newti,colt.remi,colt.addi,colt.maxe)
     
     %Convert column vector of design variables into 3D matrices
     [~,~,uis,sis,~,l] = Z23D(Z,colt);

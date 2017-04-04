@@ -1,5 +1,5 @@
-function [Z,x_bnd,t_var,t_bnd,C,n_seg,maxe,colt] = Coll_deBoor(Z,t_bnd,t_var,header,colt)
-% function [Z,x_bnd,t_var,t_bnd,C,n_seg,maxe] = Coll_deBoor(Z,t_bnd,t_var,header,colt)
+function [Z,x_bnd,t_var,t_bnd,C,colt] = Coll_deBoor(Z,t_bnd,t_var,header,colt)
+% function [Z,x_bnd,t_var,t_bnd,C,colt] = Coll_deBoor(Z,t_bnd,t_var,header,colt)
 % 
 % Given an initial design variable vector and a set of boundary node times 
 % this function solves the collocation problem and implements de Boor mesh 
@@ -18,8 +18,6 @@ function [Z,x_bnd,t_var,t_bnd,C,n_seg,maxe,colt] = Coll_deBoor(Z,t_bnd,t_var,hea
 %    t_var     non-normalized times at  final variable nodes (n_seg*(N+1)/2 x 1)
 %    t_bnd     non-normalized times at  final boundary nodes (n_seg x 1)
 %    C         matrix of polynomial coefficients (l x (N+1) x n_seg)
-%    n_seg     final number of segments
-%    maxe      max segment error
 %
 % Written by R. Pritchett, 09/24/16
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,7 +37,7 @@ Dec = colt.Dec;
 % Initialize counters
 colt.maji = 1; %initialize major while loop counter
 colt.maxe = 1; % initialize max error
-newti = 0; % initialize Newton's method iteration counter
+colt.newti = 0; % initialize Newton's method iteration counter
 
 % Print header for output table if switched on
 if strcmp('On',header) == 1
@@ -67,8 +65,14 @@ while colt.maxe > ctol % error reduction loop
                 
         % Initial call to solve collocation problem
         header = 'Off'; % turn on iteration prinout
-        [Z,x_bnd,tau_nodes,C,newti] = CollSolve_LT(Z,t_bnd,header,colt,newti);
+        [Z,x_bnd,tau_nodes,C,colt] = CollSolve_LT(Z,t_bnd,header,colt);
         
+        % If max_iteration limit was reached exit Coll_CEP
+        if colt.max_iter_chk 
+            fprintf(2,'Warning: Coll_deBoor stopped prematurely due to failure to converge collocation problem \n'); 
+            return
+        end
+    
         % Convert column vector of design variables into 3D matrices
         [~,~,uis,sis,~,~] = Z23D(Z,colt);
 
@@ -122,7 +126,13 @@ while colt.maxe > ctol % error reduction loop
         
         %Solve collocation problem
         header = 'Off'; % turn on iteration prinout
-        [Z,x_bnd,tau_nodes,C,newti] = CollSolve_LT(Z,t_bnd,header,colt,newti);
+        [Z,x_bnd,tau_nodes,C,colt] = CollSolve_LT(Z,t_bnd,header,colt);
+        
+        % If max_iteration limit was reached exit Coll_CEP
+        if colt.max_iter_chk 
+            fprintf(2,'Warning: Coll_deBoor stopped prematurely due to failure to converge collocation problem \n'); 
+            return
+        end
 
     else % if max error is above tolerance
         
@@ -147,7 +157,13 @@ while colt.maxe > ctol % error reduction loop
         
         % Solve collocation problem
         header = 'Off'; % turn on iteration prinout
-        [Z,x_bnd,tau_nodes,C,newti] = CollSolve_LT(Z,t_bnd,header,colt,newti);
+        [Z,x_bnd,tau_nodes,C,colt] = CollSolve_LT(Z,t_bnd,header,colt);
+        
+        % If max_iteration limit was reached exit Coll_CEP
+        if colt.max_iter_chk 
+            fprintf(2,'Warning: Coll_deBoor stopped prematurely due to failure to converge collocation problem \n'); 
+            return
+        end
 
         % Convert column vector of design variables into 3D matrices
         [~,~,uis,sis,~,~] = Z23D(Z,colt);
@@ -166,7 +182,4 @@ while colt.maxe > ctol % error reduction loop
     end
    
 end     
-
-% Define maxe variable for output
-maxe = colt.maxe;
      

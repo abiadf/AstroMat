@@ -51,7 +51,6 @@ T_fin = OrbIC(14);
 %%% Boundary Nodes %%%
 
 % Define boundary node times for each phase of the initial guess
-% t_bnd = linspace(0,t_ppt(end),n_seg+1);
 t_bnd = t_ppt;
 
 % Calculate segment timespans
@@ -83,7 +82,7 @@ end
 %% Propagate to Obtain Variable Node States %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Preallocate t_var_vec matrix
+% Preallocate x_var_vec matrix
 x_var_vec = zeros(6,(N+1)/2,n_seg);
 
 % Calculate states at variable node times

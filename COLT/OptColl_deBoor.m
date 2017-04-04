@@ -39,7 +39,7 @@ options_opt = colt.options_opt;
 % Initialize counters
 colt.maji = 1; %initialize major while loop counter
 colt.maxe = 1; % initialize max error
-newti = 0; % initialize Newton's method iteration counter
+colt.newti = 0; % initialize Newton's method iteration counter
 
 % Initialize matrix of lower and upper bounds on design variables in single segment 
 lb_i = [0;-Inf.*ones(3,1); -Inf.*ones(colt.n_state*(colt.N+1)/2,1,1)];
@@ -67,20 +67,20 @@ while colt.maxe > ctol % error reduction loop
         [collmat] = OptSetup(t_bnd,colt);
 
         % Run fmincon algorithm
-        [Z,~,~,output,~,~,~] = ...
+        [Z,~,~,output,lambda,~,~] = ...
             fmincon(@(Z) DrctTrans_Obj_MaxMf(Z,t_bnd,colt,collmat),Z,...
             [],[],[],[],colt.lb_Z,colt.ub_Z,...
             @(Z) DrctTrans_Con(Z,t_bnd,colt,collmat),options_opt);
 
         % Process fmincon output
-        [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt);
+        [x_bnd,tau_nodes,C,colt] = PostOpt(Z,t_bnd,output,colt);
 
         % Print statement for de Boor mesh refinement with fmincon
         Zl = length(Z); % calculate length of design variable vector
         Fl = length(lambda.eqnonlin); % calculate length of constraint vector 
         error = output.constrviolation; % extract error from fmincon output
         fprintf(' Deg  Segs  len(X)  len(F)     max(|F|)     Iter   Mesh   Node    max(|error|)     DErr \n')
-        fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e  %5.0f \n',N,n_seg,Zl,Fl,error,newti,colt.mini,colt.maji,colt.maxe,colt.maxdiffe)
+        fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e  %5.0f \n',colt.N,colt.n_seg,Zl,Fl,error,colt.newti,colt.mini,colt.maji,colt.maxe,colt.maxdiffe)
 
         % Convert column vector of design variables into 3D matrices
         [~,~,uis,sis,~,~] = Z23D(Z,colt);
@@ -143,20 +143,20 @@ while colt.maxe > ctol % error reduction loop
         [collmat] = OptSetup(t_bnd,colt);
 
         % Run fmincon algorithm
-        [Z,~,~,output,~,~,~] = ...
+        [Z,~,~,output,lambda,~,~] = ...
             fmincon(@(Z) DrctTrans_Obj_MaxMf(Z,t_bnd,colt,collmat),Z,...
             [],[],[],[],colt.lb_Z,colt.ub_Z,...
             @(Z) DrctTrans_Con(Z,t_bnd,colt,collmat),options_opt);
 
         % Process fmincon output
-        [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt);
+        [x_bnd,tau_nodes,C,colt] = PostOpt(Z,t_bnd,output,colt);
                 
         % Print statement for de Boor mesh refinement with fmincon
         Zl = length(Z); % calculate length of design variable vector
         Fl = length(lambda.eqnonlin); % calculate length of constraint vector 
         error = output.constrviolation; % extract error from fmincon output
         fprintf(' Deg  Segs  len(X)  len(F)     max(|F|)     Iter   Mesh   Node    max(|error|)     DErr \n')
-        fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e  %5.0f \n',N,n_seg,Zl,Fl,error,newti,colt.mini,colt.maji,colt.maxe,colt.maxdiffe)
+        fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e  %5.0f \n',colt.N,colt.n_seg,Zl,Fl,error,colt.newti,colt.mini,colt.maji,colt.maxe,colt.maxdiffe)
 
     else % if max error is above tolerance
         
@@ -189,20 +189,20 @@ while colt.maxe > ctol % error reduction loop
         [collmat] = OptSetup(t_bnd,colt);
 
         % Run fmincon algorithm
-        [Z,~,~,output,~,~,~] = ...
+        [Z,~,~,output,lambda,~,~] = ...
             fmincon(@(Z) DrctTrans_Obj_MaxMf(Z,t_bnd,colt,collmat),Z,...
             [],[],[],[],colt.lb_Z,colt.ub_Z,...
             @(Z) DrctTrans_Con(Z,t_bnd,colt,collmat),options_opt);
 
         % Process fmincon output
-        [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt);
+        [x_bnd,tau_nodes,C,colt] = PostOpt(Z,t_bnd,output,colt);
           
         % Print statement for de Boor mesh refinement with fmincon
         Zl = length(Z); % calculate length of design variable vector
         Fl = length(lambda.eqnonlin); % calculate length of constraint vector 
         error = output.constrviolation; % extract error from fmincon output
         fprintf(' Deg  Segs  len(X)  len(F)     max(|F|)     Iter   Mesh   Node    max(|error|)     DErr \n')
-        fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e  %5.0f \n',N,n_seg,Zl,Fl,error,newti,colt.mini,colt.maji,colt.maxe,colt.maxdiffe)
+        fprintf(' %2.0f  %4.0f  %6.0f  %6.0f  %16.8e  %5.0f  %5.0f  %5.0f  %16.8e  %5.0f \n',colt.N,colt.n_seg,Zl,Fl,error,colt.newti,colt.mini,colt.maji,colt.maxe,colt.maxdiffe)
 
         % Convert column vector of design variables into 3D matrices
         [~,~,uis,sis,~,~] = Z23D(Z,colt);

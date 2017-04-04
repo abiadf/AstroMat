@@ -1,5 +1,5 @@
-function [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt)
-% function [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti)
+function [x_bnd,tau_nodes,C,colt] = PostOpt(Z,t_bnd,output,colt)
+% function [x_bnd,tau_nodes,C,colt] = PostOpt(Z,t_bnd,output,colt)
 % 
 % This script uses fmincon output to calculate variables needed for the
 % collocation and mesh refinement process. It is intended to be run
@@ -10,7 +10,7 @@ function [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt)
 %    Z          design variable vector (n_coast+(n_state+n_cntrl+n_slack)*n_seg*(N+1)/2 x 1)
 %    t_bnd     non-normalized times at  boundary nodes (n_seg x 1)
 %    output    fmincon output structure 
-%    newti     Newton's method iteration counter 
+%    colt     structure containing collocation and optimization parameters      
 %
 % OUTPUTS:
 %    Z          final design variable vector (n_coast+(n_state+n_cntrl+n_slack)*n_seg*(N+1)/2 x 1)
@@ -18,7 +18,7 @@ function [x_bnd,tau_nodes,C,newti,colt] = PostOpt(Z,t_bnd,output,newti,colt)
 %    x_bnd      matrix of boundary node states (l x 1 x n_seg+1)
 %    tau_nodes  vector of normalized variable and defect node times (N x 1) (same for all segments)
 %    C          matrix of polynomial coefficients (l x (N+1) x n_seg)
-%    newti      Newton's method iteration counter
+%    colt     structure containing collocation and optimization parameters      
 %
 % Written by R. Pritchett, 7/27/15
 % Last Update: R. Pritchett, 10/01/2016
@@ -60,7 +60,7 @@ Bf = repmat(B(:,end),[1 1 n_seg]);
 %-------------------------------------------------------------------------%
 
 % Calculate number of fmincon iterations
-newti = newti + output.iterations; % number of fmincon iterations; NOT Newton's Method in this case
+colt.newti = colt.newti + output.iterations; % number of fmincon iterations; NOT Newton's Method in this case
 
 %-------------------------------------------------------------------------%
 % Break Z into 3D Matrices %

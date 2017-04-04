@@ -1,5 +1,5 @@
-function [Z,x_bnd,tau_nodes,C,newti] = CollSolve_LT(Z,t_bnd,header,colt,newti)
-% function [Z,x_bnd,tau_nodes,C,newti] = CollSolve_LT(Z,t_bnd,header,colt,newti)
+function [Z,x_bnd,tau_nodes,C,colt] = CollSolve_LT(Z,t_bnd,header,colt)
+% function [Z,x_bnd,tau_nodes,C,colt] = CollSolve_LT(Z,t_bnd,header,colt)
 % 
 % Given an initial design variable vector and a set of boundary node times 
 % this function solves the collocation problem when low-thrust is included.
@@ -9,7 +9,6 @@ function [Z,x_bnd,tau_nodes,C,newti] = CollSolve_LT(Z,t_bnd,header,colt,newti)
 %    t_bnd      non-normalized times at  boundary nodes (n_seg x 1)
 %    header     string that indicates whether to print output of each Newton's method iteration 
 %    colt       structure containing collocation and optimization parameters
-%    newti      Newton's method iteration counter
 %
 % OUTPUTS:
 %    Z          final design variable vector (n_coast+(n_state+n_cntrl+n_slack)*n_seg*(N+1)/2 x 1)
@@ -17,7 +16,7 @@ function [Z,x_bnd,tau_nodes,C,newti] = CollSolve_LT(Z,t_bnd,header,colt,newti)
 %    x_bnd      matrix of boundary node states (l x 1 x n_seg+1)
 %    tau_nodes  vector of normalized variable and defect node times (N x 1) (same for all segments)
 %    C          matrix of polynomial coefficients (l x (N+1) x n_seg)
-%    newti      Newton's method iteration counter
+%    colt       structure containing collocation and optimization parameters
 %
 % Written by R. Pritchett, 6/07/16
 % Last Update: R. Pritchett, 01/31/2017
@@ -35,8 +34,9 @@ n_seg = colt.n_seg;
 n_state = colt.n_state;
 n_coast = colt.n_coast;
 newt_tol = colt.newt_tol;
+newti = colt.newti;
 max_iter = colt.max_iter;
-max_iter_chk = false;
+max_iter_chk = colt.max_iter_chk;
 atten_tol = colt.atten_tol;
 atten = colt.atten;
 
@@ -118,7 +118,7 @@ Fl = length(F);
 
 % Compute full Jacobian with either Forward or Central Difference Methods
 % [DF_fwrd] = MakeDF_Num(Z,Fl,t_seg,t_seg_d,collmat,colt);
-DF_fwrd = zeros(Fl,Zl);
+% DF_fwrd = zeros(Fl,Zl);
 
 % Compute only nonzeros of the Jacobian with Complex Step Differentiation
 if n_coast > 0 % if coast parameters are included
@@ -128,11 +128,11 @@ else % if no coast parameters are included
 end
 
 % Convert DF into a sparse matrix
-DF_sparse_fwrd = sparse(DF_fwrd); % for forward step case
+% DF_sparse_fwrd = sparse(DF_fwrd); % for forward step case
 DF_sparse=sparse(iRow,jCol,DF,Fl,Zl); % for complex step case
 
 % Calculate length of DF_sparse and DF sparsity percentage
-DFl_fwrd = nnz(DF_sparse_fwrd); % for forward step case
+% DFl_fwrd = nnz(DF_sparse_fwrd); % for forward step case
 DFl = length(DF); % for complex step case
 sparsity = 100*(1-DFl/(Fl*Zl));
 
@@ -194,7 +194,7 @@ while error > newt_tol && ~max_iter_chk
 
     % Compute full Jacobian with either Forward or Central Difference Methods
 %     [DF_fwrd] = MakeDF_Num(Z,Fl,t_seg,t_seg_d,collmat,colt);
-    DF_fwrd = zeros(Fl,Zl);
+%     DF_fwrd = zeros(Fl,Zl);
 
     % Compute only nonzeros of the Jacobian with Complex Step Differentiation
     if n_coast > 0 % if coast parameters are included
@@ -204,11 +204,11 @@ while error > newt_tol && ~max_iter_chk
     end
 
     % Convert DF into a sparse matrix
-    DF_sparse_fwrd = sparse(DF_fwrd); % for forward step case
+%     DF_sparse_fwrd = sparse(DF_fwrd); % for forward step case
     DF_sparse=sparse(iRow,jCol,DF,Fl,Zl); % for complex step case
 
     % Calculate length of DF_sparse and DF sparsity percentage
-    DFl_fwrd = nnz(DF_sparse); % for forward step case
+%     DFl_fwrd = nnz(DF_sparse); % for forward step case
     DFl = length(DF); % for complex step case
     sparsity = 100*(1-DFl/(Fl*Zl));
 
@@ -230,7 +230,7 @@ while error > newt_tol && ~max_iter_chk
     % Check if max iteration limit has been reached
     if newti == max_iter
         max_iter_chk = true;
-        error('The solver stopped because the Newton''s method maximum iteration limit was reached')
+        warning('The solver stopped because the Newton''s method maximum iteration limit was reached')
     end
     
 end
@@ -239,3 +239,7 @@ end
 
 %Create vector of boundary nodes 
 x_bnd = cat(3,x0,xf(:,:,end));
+
+% Save newti and max_ter_chk in colt structure
+colt.newti = newti;
+colt.max_iter_chk = max_iter_chk;

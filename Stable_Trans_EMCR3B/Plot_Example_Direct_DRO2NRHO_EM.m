@@ -26,7 +26,7 @@ view([-32,18])
 % view(90,0) % YZ Plane View
 
 % Plot Earth - realistic image, function from Bonnie Prado
-bodyplot('Textures\','Earth',r_E,-mu.*l_ch,0,0,0.9,[1 0 0],0); % create 3D surface from sphere coordinates
+% bodyplot('Textures\','Earth',r_E,-mu.*l_ch,0,0,0.9,[1 0 0],0); % create 3D surface from sphere coordinates
 
 % Plot Moon - realistic image, function from Bonnie Prado
 bodyplot('Textures\','Moon',r_M,(1-mu).*l_ch,0,0,0.9,[1 0 0],0); % create 3D surface from sphere coordinates
@@ -81,15 +81,15 @@ T_var_hist = ZPlot_fin.T_var_hist;
 uT_var_hist = ZPlot_fin.uT_var_hist;
 
 % % Plot boundary nodes
-% plot3(x_bnd_plot_fin(:,1).*l_ch,x_bnd_plot_fin(:,2).*l_ch,x_bnd_plot_fin(:,3).*l_ch,'+k','MarkerSize',8);
+% h_bnd = plot3(x_bnd_plot_fin(:,1).*l_ch,x_bnd_plot_fin(:,2).*l_ch,x_bnd_plot_fin(:,3).*l_ch,'.k','MarkerSize',12);
 
 % Plot initial and final boundary nodes only
 plot3(x_bnd_plot_fin(1,1).*l_ch,x_bnd_plot_fin(1,2).*l_ch,x_bnd_plot_fin(1,3).*l_ch,'.k','MarkerSize',12);
 plot3(x_bnd_plot_fin(end,1).*l_ch,x_bnd_plot_fin(end,2).*l_ch,x_bnd_plot_fin(end,3).*l_ch,'.k','MarkerSize',12);
 
 % Plot variable nodes
-% plot3(x_var_plot_fin(:,1).*l_ch,x_var_plot_fin(:,2).*l_ch,x_var_plot_fin(:,3).*l_ch,'.b','MarkerSize',8);
-% plot3(x_var_plot_fin(:,1).*l_ch,x_var_plot_fin(:,2).*l_ch,x_var_plot_fin(:,3).*l_ch,'b','LineWidth',2);
+% h_var = plot3(x_var_plot_fin(:,1).*l_ch,x_var_plot_fin(:,2).*l_ch,x_var_plot_fin(:,3).*l_ch,'.r','MarkerSize',10);
+% plot3(x_var_plot_fin(:,1).*l_ch,x_var_plot_fin(:,2).*l_ch,x_var_plot_fin(:,3).*l_ch,'k','LineWidth',2);
 
 % % Plot thrust vectors
 % quiver3(x_var_plot_fin(:,1).*l_ch,x_var_plot_fin(:,2).*l_ch,x_var_plot_fin(:,3).*l_ch,...
@@ -114,9 +114,9 @@ for ii = 1:colt.n_seg
     scl = 100000;
     if strcmp(traj_TorC_i,'T')
         h1 = plot3(x_traj_i(:,1).*l_ch,x_traj_i(:,2).*l_ch,x_traj_i(:,3).*l_ch,'r','LineWidth',1);
-        ind_arrow = floor(size(x_traj_i,1)/2);
-        quiver3(x_traj_i(ind_arrow,1).*l_ch,x_traj_i(ind_arrow,2).*l_ch,x_traj_i(ind_arrow,3).*l_ch,...
-            x_traj_i(ind_arrow,4).*scl,x_traj_i(ind_arrow,5).*scl,x_traj_i(ind_arrow,6).*scl,'r')
+%         ind_arrow = floor(size(x_traj_i,1)/2);
+%         quiver3(x_traj_i(ind_arrow,1).*l_ch,x_traj_i(ind_arrow,2).*l_ch,x_traj_i(ind_arrow,3).*l_ch,...
+%             x_traj_i(ind_arrow,4).*scl,x_traj_i(ind_arrow,5).*scl,x_traj_i(ind_arrow,6).*scl,'r')
         nothrst = false;
     else
         h2 = plot3(x_traj_i(:,1).*l_ch,x_traj_i(:,2).*l_ch,x_traj_i(:,3).*l_ch,'b','LineWidth',1);
@@ -135,6 +135,9 @@ elseif nothrst
 else
     legend([h1 h2],{'Thrust','Coast'})
 end
+
+% % Legend for boundary and variable nodes
+% legend([h_bnd h_var],{'Boundary Point','Variable Node'})
 
 hold off
     
